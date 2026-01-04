@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Location from 'expo-location';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
 export const useLocation = () => {
@@ -22,23 +22,36 @@ export const useLocation = () => {
       setLocationPermission(granted);
 
       if (granted) {
-        // Get initial location immediately
+        // Get initial location immediately with high accuracy
         try {
           const initialLocation = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.BestForNavigation,
+            accuracy: Location.Accuracy.High,
+            maximumAge: 10000, // Accept cached location up to 10 seconds old
+            timeout: 15000, // 15 second timeout
           });
           setUserLocation(formatLocation(initialLocation.coords));
         } catch (error) {
           console.error("Error getting initial location:", error);
+          // Try with lower accuracy if high accuracy fails
+          try {
+            const fallbackLocation = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+              maximumAge: 30000,
+              timeout: 10000,
+            });
+            setUserLocation(formatLocation(fallbackLocation.coords));
+          } catch (fallbackError) {
+            console.error("Fallback location also failed:", fallbackError);
+          }
         }
 
-        // Start watching position
+        // Start watching position with optimized settings
         try {
           subscriptionRef.current = await Location.watchPositionAsync(
             {
-              accuracy: Location.Accuracy.BestForNavigation,
-              distanceInterval: 5,
-              timeInterval: 1000,
+              accuracy: Location.Accuracy.High,
+              distanceInterval: 10, // Update every 10 meters
+              timeInterval: 5000, // Update every 5 seconds
             },
             (location) => {
               setUserLocation(formatLocation(location.coords));

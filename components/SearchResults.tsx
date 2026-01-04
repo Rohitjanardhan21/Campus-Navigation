@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, FlatList, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { CampusPlace } from '@/src/domain/campus';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const iconMap: Record<string, string> = {
   academic: 'school',
@@ -16,6 +16,8 @@ const iconMap: Record<string, string> = {
   landmark: 'map',
   entrance: 'enter',
   hostel: 'home',
+  services: 'construct',
+  parking: 'car',
   default: 'location'
 };
 
@@ -30,6 +32,8 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   onSelectResult,
   onQuickNavigation
 }) => {
+  // const { theme } = useTheme();
+
   const renderResultItem = ({ item }: { item: CampusPlace }) => (
     <TouchableOpacity
       style={styles.resultItem}
@@ -41,13 +45,13 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       <Ionicons
         name={iconMap[item.type] || iconMap.default as any}
         size={20}
-        color="#5f5f5f"
+        color="#1A73E8"
         style={styles.resultIcon}
       />
       <View style={styles.resultTextContainer}>
         <Text style={styles.resultTitle}>{item.name}</Text>
         <Text style={styles.resultSubtitle}>
-          {item.type}
+          {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
         </Text>
       </View>
 
@@ -59,7 +63,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           }}
           style={styles.navigateButton}
         >
-          <Ionicons name="navigate" size={24} color="#4285F4" />
+          <Ionicons name="navigate" size={24} color="#1A73E8" />
         </TouchableOpacity>
       )}
     </TouchableOpacity>
@@ -71,6 +75,8 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
   console.log('Rendering search results:', results.length);
 
+  // const styles = createStyles(theme);
+
   return (
     <View style={styles.resultsContainer}>
       <FlatList
@@ -78,12 +84,13 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         renderItem={renderResultItem}
         keyExtractor={(item, index) => item.id || `search-result-${index}`}
         keyboardShouldPersistTaps="always"
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   resultsContainer: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 120 : 80,
@@ -126,6 +133,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 });
+
+const styles = createStyles(null);
 
 export default SearchResults;
 

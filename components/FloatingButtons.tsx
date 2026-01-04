@@ -21,6 +21,7 @@ const SmartFloatingButtons: React.FC<SmartFloatingButtonsProps> = ({
   onTraffic,
   isNavigating = false,
 }) => {
+  // const { theme } = useTheme();
   const slideAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 

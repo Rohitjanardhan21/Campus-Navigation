@@ -5,25 +5,28 @@ import { CAMPUS_PATHS } from "@/src/data/geo/paths";
 import Mapbox from "@rnmapbox/maps";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  Share,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Keyboard,
+    Share,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 // Hooks
 import { useLocation } from "@/hooks/useLocation";
 import { useNavigation } from "@/hooks/useNavigation";
 import { useSearch } from "@/hooks/useSearch";
+// import { useTheme } from "@/hooks/useTheme";
 
 // Components
 import SmartFloatingButtons from "@/components/FloatingButtons";
+import InstructionsPanel from "@/components/InstructionsPanel";
 import MenuModal from "@/components/MenuModal";
 import EnhancedNavigationPanel from "@/components/NavigationPanel";
 import PlaceDetailsModal from "@/components/PlaceDetailsModal";
+import RouteProgressBar from "@/components/RouteProgressBar";
 import FuturisticSearchBar from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
 import SettingsModal from "@/components/SettingsModal";
@@ -32,15 +35,22 @@ import SettingsModal from "@/components/SettingsModal";
 const MAPBOX_TOKEN =
   process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
   "pk.eyJ1IjoiYmVyaWNrcyIsImEiOiJjbWVkMmxhdDIwNXdyMmxzNTA3ZnprMHk3In0.hE8cQigI9JFbb9YBHnOsHQ";
-Mapbox.setAccessToken(MAPBOX_TOKEN);
+
+// Initialize Mapbox safely
+try {
+  Mapbox.setAccessToken(MAPBOX_TOKEN);
+} catch (error) {
+  console.error("Failed to set Mapbox token:", error);
+}
 
 const DEFAULT_CAMERA_SETTINGS = {
   zoomLevel: 16,
-  centerCoordinate: [77.6033, 12.9343] as [number, number],
+  centerCoordinate: [77.48, 12.94] as [number, number], // Your specified location
   navigationZoomLevel: 17,
 };
 
 const MapScreen = () => {
+  // const { theme } = useTheme();
   const [ready, setReady] = useState(false);
   const [mapStyle, setMapStyle] = useState(
     "mapbox://styles/mapbox/streets-v11"
@@ -51,6 +61,9 @@ const MapScreen = () => {
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showPlaceDetails, setShowPlaceDetails] = useState(false);
+  const [showInstructionsPanel, setShowInstructionsPanel] = useState(false);
+  const [hasCenteredOnUser, setHasCenteredOnUser] = useState(false);
+  const [isWaitingForLocation, setIsWaitingForLocation] = useState(true);
   const [selectedPlace, setSelectedPlace] = useState<
     (typeof CAMPUS_PLACES)[0] | null
   >(null);
@@ -66,7 +79,10 @@ const MapScreen = () => {
     searchResults,
     showResults,
     isSearchFocused,
+    categories,
+    selectedCategory,
     handleSearch,
+    handleCategoryChange,
     clearSearch,
     handleSelectResult: selectResult,
     setIsSearchFocused,
@@ -80,6 +96,10 @@ const MapScreen = () => {
     travelTime,
     distance,
     slideAnim,
+    navigationSteps,
+    currentStepIndex,
+    routeProgress,
+    updateNavigationProgress,
     startNavigation,
     stopNavigation,
     handleImmediateMapNavigation,
@@ -88,15 +108,62 @@ const MapScreen = () => {
   useEffect(() => {
     const initMap = async () => {
       try {
+        // Request location permissions first
         await Mapbox.requestAndroidLocationPermissions();
         setReady(true);
       } catch (error) {
         console.error("Map initialization error:", error);
-        setReady(true); // Continue anyway
+        // Continue anyway to prevent black screen
+        setReady(true);
       }
     };
-    initMap();
+    
+    // Add a small delay to ensure everything is loaded
+    const timer = setTimeout(() => {
+      initMap();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
+
+  // Update navigation progress when user location changes
+  useEffect(() => {
+    if (userLocation && isNavigating) {
+      updateNavigationProgress(userLocation);
+    }
+  }, [userLocation, isNavigating, updateNavigationProgress]);
+
+  // Update camera when user location is first detected
+  useEffect(() => {
+    if (userLocation && cameraRef.current && ready && !hasCenteredOnUser) {
+      // Only update camera on first location detection
+      const timer = setTimeout(() => {
+        cameraRef.current?.setCamera({
+          centerCoordinate: userLocation,
+          zoomLevel: DEFAULT_CAMERA_SETTINGS.zoomLevel,
+          animationDuration: 1500,
+        });
+        setHasCenteredOnUser(true);
+        setIsWaitingForLocation(false);
+      }, 500); // Small delay to ensure map is fully loaded
+
+      return () => clearTimeout(timer);
+    }
+  }, [userLocation, ready, hasCenteredOnUser]);
+
+  // Set timeout for location detection
+  useEffect(() => {
+    if (ready && isWaitingForLocation) {
+      const locationTimeout = setTimeout(() => {
+        if (!userLocation) {
+          setIsWaitingForLocation(false);
+          console.log("Location timeout - using default location");
+        }
+      }, 8000); // 8 second timeout
+
+      return () => clearTimeout(locationTimeout);
+    }
+  }, [ready, isWaitingForLocation, userLocation]);
 
   const handleGoToCurrentLocation = async () => {
     try {
@@ -213,21 +280,30 @@ const MapScreen = () => {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#4285F4" />
-        <Text style={{ marginTop: 10 }}>Loading map...</Text>
+        <Text style={{ marginTop: 10, color: '#5F6368' }}>Loading map...</Text>
+        <Text style={{ marginTop: 5, fontSize: 12, color: '#9AA0A6' }}>
+          Getting your location
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={styles.page}>
-      <Mapbox.MapView
-        ref={mapRef}
-        style={styles.map}
-        styleURL={mapStyle}
-        onPress={handleMapPressAndRoute}
-        onDidFinishLoadingMap={() => console.log("Map loaded successfully")}
-        onDidFailLoadingMap={() => console.warn("Map loading failed")}
-      >
+      {ready ? (
+        <Mapbox.MapView
+          ref={mapRef}
+          style={styles.map}
+          styleURL={mapStyle}
+          onPress={handleMapPressAndRoute}
+          onDidFinishLoadingMap={() => console.log("Map loaded successfully")}
+          onDidFailLoadingMap={(error) => {
+            console.warn("Map loading failed:", error);
+          }}
+          onError={(error) => {
+            console.error("Map error:", error);
+          }}
+        >
         <Mapbox.Camera
           ref={cameraRef}
           defaultSettings={{
@@ -301,12 +377,23 @@ const MapScreen = () => {
         {isNavigating && routeInfo?.feature && (
           <Mapbox.ShapeSource id="route-source" shape={routeInfo.feature}>
             <Mapbox.LineLayer
+              id="route-line-background"
+              style={{
+                lineColor: "#FFFFFF",
+                lineWidth: 10,
+                lineCap: "round",
+                lineJoin: "round",
+                lineOpacity: 0.8,
+              }}
+            />
+            <Mapbox.LineLayer
               id="route-line"
               style={{
-                lineColor: "#007AFF",
+                lineColor: "#1A73E8",
                 lineWidth: 6,
                 lineCap: "round",
                 lineJoin: "round",
+                lineOpacity: 1,
               }}
             />
           </Mapbox.ShapeSource>
@@ -327,6 +414,34 @@ const MapScreen = () => {
           </Mapbox.PointAnnotation>
         ))}
       </Mapbox.MapView>
+      ) : (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#4285F4" />
+          <Text style={{ marginTop: 10, color: '#5F6368' }}>Loading map...</Text>
+          <Text style={{ marginTop: 5, fontSize: 12, color: '#9AA0A6' }}>
+            Getting your location
+          </Text>
+        </View>
+      )}
+
+      {/* Location Loading Indicator */}
+      {isWaitingForLocation && !userLocation && (
+        <View style={styles.locationLoadingContainer}>
+          <View style={styles.locationLoadingCard}>
+            <ActivityIndicator size="small" color="#1A73E8" />
+            <Text style={styles.locationLoadingText}>Getting your location...</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Route Progress Bar */}
+      {isNavigating && navigationSteps.length > 0 && (
+        <RouteProgressBar
+          currentInstruction={navigationSteps[currentStepIndex]}
+          progress={routeProgress}
+          isNavigating={isNavigating}
+        />
+      )}
 
       {/* Search Bar */}
       <FuturisticSearchBar
@@ -343,6 +458,9 @@ const MapScreen = () => {
           }
         }}
         isSearchFocused={isSearchFocused}
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onCategoryChange={handleCategoryChange}
         onVoiceSearch={() => {
           Alert.alert("Voice Search", "Voice search feature coming soon!", [
             { text: "OK" },
@@ -386,6 +504,7 @@ const MapScreen = () => {
           distance={distance}
           onStopNavigation={stopNavigation}
           isNavigating={isNavigating}
+          onShowInstructions={() => setShowInstructionsPanel(true)}
         />
       )}
 
@@ -455,6 +574,14 @@ const MapScreen = () => {
         visible={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
       />
+
+      {/* Turn-by-Turn Instructions Panel */}
+      <InstructionsPanel
+        instructions={navigationSteps}
+        currentInstructionIndex={currentStepIndex}
+        visible={showInstructionsPanel}
+        onClose={() => setShowInstructionsPanel(false)}
+      />
     </View>
   );
 };
@@ -483,5 +610,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  locationLoadingContainer: {
+    position: 'absolute',
+    top: 120,
+    left: 16,
+    right: 16,
+    zIndex: 998,
+    alignItems: 'center',
+  },
+  locationLoadingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    gap: 8,
+  },
+  locationLoadingText: {
+    fontSize: 14,
+    color: '#5F6368',
+    fontWeight: '500',
   },
 });

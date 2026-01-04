@@ -1,12 +1,10 @@
-import { addStartNodeOnEdge } from "@/features/navigation/addStartNodeOnEdge";
-import { buildGraph } from "@/features/navigation/buildGraph";
-import { dijkstra } from "@/features/navigation/dijkstra";
-import { findNearestNode } from "@/features/navigation/findNearestNode";
-import { routeToGeoJSON } from "@/features/navigation/routeToGeoJson";
-import { snapToPathsWithSegment } from "@/features/navigation/snapToPath";
-import { CAMPUS_PATHS } from "@/src/data/geo/paths";
+import {
+    calculateRouteProgress as calculateMapboxProgress,
+    getMapboxRoute,
+    getNextStep as getNextMapboxStep,
+    NavigationStep
+} from "@/features/navigation/mapboxRouting";
 import { CampusPlace } from "@/src/domain/campus";
-import { point, distance as turfDistance } from "@turf/turf";
 import { Feature, LineString } from "geojson";
 import { useCallback, useRef, useState } from "react";
 import { Alert, Animated, Easing } from "react-native";
@@ -16,6 +14,15 @@ export interface RouteInfo {
   duration: number; // in minutes
   distance: number; // in km
   feature?: Feature<LineString>;
+  steps?: NavigationStep[];
+}
+
+export interface RouteProgress {
+  currentStepIndex: number;
+  distanceToNextStep: number;
+  totalDistanceRemaining: number;
+  estimatedTimeRemaining: number;
+  isOffRoute: boolean;
 }
 
 export const useNavigation = () => {
@@ -31,8 +38,67 @@ export const useNavigation = () => {
   >(null);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
 
+  // New turn-by-turn navigation state
+  const [navigationSteps, setNavigationSteps] = useState<NavigationStep[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [routeProgress, setRouteProgress] = useState<RouteProgress>({
+    currentStepIndex: 0,
+    distanceToNextStep: 0,
+    totalDistanceRemaining: 0,
+    estimatedTimeRemaining: 0,
+    isOffRoute: false
+  });
+  const [needsRerouting, setNeedsRerouting] = useState(false);
+
   const slideAnim = useRef(new Animated.Value(-100)).current;
 
+  // Update location tracking for turn-by-turn navigation
+  const updateNavigationProgress = useCallback((userLocation: [number, number]) => {
+    if (!isNavigating || navigationSteps.length === 0) return;
+
+    // Calculate current progress
+    const progress = calculateMapboxProgress(userLocation, navigationSteps, currentStepIndex);
+    setRouteProgress(progress);
+
+    // Check if we need to advance to next step
+    const { nextIndex, shouldAdvance } = getNextMapboxStep(userLocation, navigationSteps, currentStepIndex);
+    
+    if (shouldAdvance && nextIndex !== currentStepIndex) {
+      setCurrentStepIndex(nextIndex);
+    }
+
+    // Check if rerouting is needed
+    if (progress.isOffRoute && !needsRerouting) {
+      setNeedsRerouting(true);
+      // Auto-reroute after 5 seconds of being off route
+      setTimeout(() => {
+        if (selectedDestination) {
+          handleRerouting(userLocation, selectedDestination);
+        }
+      }, 5000);
+    }
+  }, [isNavigating, navigationSteps, currentStepIndex, needsRerouting, selectedDestination]);
+
+  // Handle rerouting when user goes off path
+  const handleRerouting = useCallback(async (
+    userLocation: [number, number],
+    destination: CampusPlace
+  ) => {
+    try {
+      setNeedsRerouting(false);
+      const newRoute = await calculateRoute(userLocation, getSafeCoordinates(destination)!);
+      
+      if (newRoute) {
+        setRouteInfo(newRoute);
+        setNavigationSteps(newRoute.steps || []);
+        setCurrentStepIndex(0);
+        setTravelTime(newRoute.duration);
+        setDistance(newRoute.distance);
+      }
+    } catch (error) {
+      console.error('Rerouting failed:', error);
+    }
+  }, []);
   // Helper function to validate coordinates
   const validateCoordinates = (coords: [number, number]): boolean => {
     if (!coords || !Array.isArray(coords) || coords.length !== 2) {
@@ -78,7 +144,7 @@ export const useNavigation = () => {
     return null;
   };
 
-  // Calculate route using graph-based Dijkstra algorithm
+  // Calculate route using Mapbox Directions API
   const calculateRoute = useCallback(
     async (
       startCoords: [number, number],
@@ -95,59 +161,20 @@ export const useNavigation = () => {
 
         console.log("Calculating route from:", startCoords, "to:", endCoords);
 
-        // Build graph from campus paths
-        const graph = buildGraph(CAMPUS_PATHS);
-
-        // Snap start to path
-        const snapInfo = snapToPathsWithSegment(startCoords, CAMPUS_PATHS);
-        if (snapInfo.index >= snapInfo.line.length - 1) {
-          console.error("Invalid snap index");
+        // Use Mapbox Directions API for real road routing
+        const mapboxRoute = await getMapboxRoute(startCoords, endCoords);
+        
+        if (!mapboxRoute) {
+          console.error("No route found from Mapbox");
           return null;
         }
-
-        // Add start node on edge
-        const { graph: updatedGraph, startNodeId } = addStartNodeOnEdge(
-          graph,
-          snapInfo.snappedCoord,
-          snapInfo.line[snapInfo.index],
-          snapInfo.line[snapInfo.index + 1]
-        );
-
-        // Find nearest node to destination
-        const endNodeId = findNearestNode(endCoords, updatedGraph);
-
-        // Calculate route using Dijkstra
-        const route = dijkstra(updatedGraph, startNodeId, endNodeId);
-
-        if (route.length === 0) {
-          console.error("No route found");
-          return null;
-        }
-
-        // Convert to GeoJSON
-        const routeFeature = routeToGeoJSON(route, updatedGraph);
-
-        // Calculate distance and time
-        let totalDistance = 0;
-        for (let i = 1; i < route.length; i++) {
-          const from = updatedGraph.nodes[route[i - 1]].coord;
-          const to = updatedGraph.nodes[route[i]].coord;
-          if (from && to) {
-            totalDistance += turfDistance(point(from), point(to), {
-              units: "meters",
-            });
-          }
-        }
-
-        const distanceKm = (totalDistance / 1000).toFixed(1);
-        // Estimate walking time (5 km/h average walking speed)
-        const duration = Math.round((parseFloat(distanceKm) / 5) * 60);
 
         return {
-          coordinates: routeFeature.geometry.coordinates as [number, number][],
-          duration,
-          distance: parseFloat(distanceKm),
-          feature: routeFeature,
+          coordinates: mapboxRoute.coordinates,
+          duration: mapboxRoute.duration,
+          distance: mapboxRoute.distance,
+          feature: mapboxRoute.feature,
+          steps: mapboxRoute.steps
         };
       } catch (error) {
         console.error("Route calculation error:", error);
@@ -188,6 +215,17 @@ export const useNavigation = () => {
           setTravelTime(route.duration);
           setDistance(route.distance);
           setSelectedDestination(destination as CampusPlace);
+          
+          // Set up turn-by-turn navigation
+          setNavigationSteps(route.steps || []);
+          setCurrentStepIndex(0);
+          setRouteProgress({
+            currentStepIndex: 0,
+            distanceToNextStep: 0,
+            totalDistanceRemaining: route.distance * 1000,
+            estimatedTimeRemaining: route.duration * 60,
+            isOffRoute: false
+          });
 
           Animated.timing(slideAnim, {
             toValue: 0,
@@ -221,6 +259,18 @@ export const useNavigation = () => {
     setRouteInfo(null);
     setTravelTime(null);
     setDistance(null);
+    
+    // Reset turn-by-turn navigation state
+    setNavigationSteps([]);
+    setCurrentStepIndex(0);
+    setRouteProgress({
+      currentStepIndex: 0,
+      distanceToNextStep: 0,
+      totalDistanceRemaining: 0,
+      estimatedTimeRemaining: 0,
+      isOffRoute: false
+    });
+    setNeedsRerouting(false);
 
     Animated.timing(slideAnim, {
       toValue: -100,
@@ -311,6 +361,12 @@ export const useNavigation = () => {
     tappedCoordinate,
     slideAnim,
     isCalculatingRoute,
+    // Turn-by-turn navigation
+    navigationSteps,
+    currentStepIndex,
+    routeProgress,
+    needsRerouting,
+    updateNavigationProgress,
     startNavigation,
     stopNavigation,
     handleMapPress,

@@ -2,15 +2,15 @@ import { CampusPlace } from "@/src/domain/campus";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Alert,
-  Animated,
-  PanResponder,
-  Platform,
-  Share,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    PanResponder,
+    Platform,
+    Share,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 // Voice guidance - conditionally import expo-speech
@@ -36,6 +36,9 @@ const iconMap: Record<string, string> = {
   landmark: "map",
   entrance: "enter",
   hostel: "home",
+  medical: "medical",
+  services: "construct",
+  parking: "car",
   default: "location",
 };
 
@@ -46,6 +49,7 @@ interface EnhancedNavigationPanelProps {
   distance: number | null;
   onStopNavigation: () => void;
   isNavigating: boolean;
+  onShowInstructions?: () => void;
 }
 
 const EnhancedNavigationPanel: React.FC<EnhancedNavigationPanelProps> = ({
@@ -55,12 +59,16 @@ const EnhancedNavigationPanel: React.FC<EnhancedNavigationPanelProps> = ({
   distance,
   onStopNavigation,
   isNavigating,
+  onShowInstructions,
 }) => {
+  // const { theme } = useTheme();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const panY = useRef(new Animated.Value(0)).current;
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [showSteps, setShowSteps] = useState(false);
+
+  const styles = createStyles(null);
 
   // Pan responder for swipe down to close
   const panResponder = useRef(
@@ -134,14 +142,18 @@ const EnhancedNavigationPanel: React.FC<EnhancedNavigationPanelProps> = ({
 
   // Steps handler
   const handleSteps = () => {
-    setShowSteps(!showSteps);
-    Alert.alert(
-      "Navigation Steps",
-      `1. Head ${selectedDestination?.name || "destination"}\n2. Continue for ${
-        distance || "0"
-      } km\n3. Arrive at destination`,
-      [{ text: "OK" }]
-    );
+    if (onShowInstructions) {
+      onShowInstructions();
+    } else {
+      setShowSteps(!showSteps);
+      Alert.alert(
+        "Navigation Steps",
+        `1. Head ${selectedDestination?.name || "destination"}\n2. Continue for ${
+          distance || "0"
+        } km\n3. Arrive at destination`,
+        [{ text: "OK" }]
+      );
+    }
   };
 
   // Share handler
@@ -342,7 +354,7 @@ const EnhancedNavigationPanel: React.FC<EnhancedNavigationPanelProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     position: "absolute",
     bottom: 0,

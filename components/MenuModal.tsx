@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface MenuModalProps {
   visible: boolean;
@@ -20,20 +20,29 @@ interface MenuItemProps {
   color?: string;
 }
 
-const MenuItem: React.FC<MenuItemProps> = ({ icon, title, subtitle, onPress, color = '#202124' }) => (
-  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-    <View style={[styles.iconContainer, { backgroundColor: color + '15' }]}>
-      <Ionicons name={icon as any} size={24} color={color} />
-    </View>
-    <View style={styles.menuTextContainer}>
-      <Text style={styles.menuTitle}>{title}</Text>
-      {subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
-    </View>
-    <Ionicons name="chevron-forward" size={20} color="#9AA0A6" />
-  </TouchableOpacity>
-);
+const MenuItem: React.FC<MenuItemProps> = ({ icon, title, subtitle, onPress, color = '#202124' }) => {
+  // const { theme } = useTheme();
+  // const styles = createStyles(theme);
+  const styles = createStyles(null);
+  
+  return (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+      <View style={[styles.iconContainer, { backgroundColor: color + '15' }]}>
+        <Ionicons name={icon as any} size={24} color={color} />
+      </View>
+      <View style={styles.menuTextContainer}>
+        <Text style={styles.menuTitle}>{title}</Text>
+        {subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#9AA0A6" />
+    </TouchableOpacity>
+  );
+};
 
 const MenuModal: React.FC<MenuModalProps> = ({ visible, onClose, onSettings, onAbout, onHelp, onFeedback, onShare }) => {
+  // const { theme } = useTheme();
+  const styles = createStyles(null);
+  
   return (
     <Modal
       visible={visible}
@@ -107,7 +116,7 @@ const MenuModal: React.FC<MenuModalProps> = ({ visible, onClose, onSettings, onA
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',

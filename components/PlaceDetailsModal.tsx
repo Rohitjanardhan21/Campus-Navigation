@@ -1,7 +1,7 @@
-import React from 'react';
-import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { CampusPlace } from '@/src/domain/campus';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const iconMap: Record<string, string> = {
   academic: 'school',
@@ -16,6 +16,9 @@ const iconMap: Record<string, string> = {
   landmark: 'map',
   entrance: 'enter',
   hostel: 'home',
+  medical: 'medical',
+  services: 'construct',
+  parking: 'car',
   default: 'location'
 };
 
@@ -27,16 +30,12 @@ interface PlaceDetailsModalProps {
 }
 
 const PlaceDetailsModal: React.FC<PlaceDetailsModalProps> = ({ visible, place, onClose, onStartNavigation }) => {
+  // const { theme } = useTheme();
+  
   if (!place) return null;
 
-  // Mock data for place details
-  const placeDetails = {
-    rating: 4.5,
-    reviews: 120,
-    hours: "Open until 8:00 PM",
-    website: "www.example.com",
-    phone: "(123) 456-7890"
-  };
+  // const styles = createStyles(theme);
+  const styles = createStyles(null);
 
   return (
     <Modal
@@ -66,24 +65,10 @@ const PlaceDetailsModal: React.FC<PlaceDetailsModalProps> = ({ visible, place, o
               <View style={styles.modalTitleContainer}>
                 <Text style={styles.modalTitle}>{place.name}</Text>
                 <Text style={styles.modalSubtitle}>
-                  {place.type}
+                  {place.type.charAt(0).toUpperCase() + place.type.slice(1)}
                 </Text>
-                {placeDetails.rating && (
-                  <View style={styles.ratingContainer}>
-                    <Text style={styles.ratingText}>{placeDetails.rating}</Text>
-                    <View style={styles.starsContainer}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Ionicons
-                          key={star}
-                          name={star <= Math.floor(placeDetails.rating) ? "star" : "star-outline"}
-                          size={14}
-                          color={star <= Math.floor(placeDetails.rating) ? "#FBBC04" : "#DADCE0"}
-                          style={{ marginRight: 2 }}
-                        />
-                      ))}
-                    </View>
-                    <Text style={styles.reviewsText}>({placeDetails.reviews})</Text>
-                  </View>
+                {place.description && (
+                  <Text style={styles.descriptionText}>{place.description}</Text>
                 )}
               </View>
             </View>
@@ -106,19 +91,25 @@ const PlaceDetailsModal: React.FC<PlaceDetailsModalProps> = ({ visible, place, o
             </View>
 
             <View style={styles.modalInfoSection}>
-              <View style={styles.infoItem}>
-                <Ionicons name="time" size={20} color="#5f6368" style={styles.infoIcon} />
-                <Text style={styles.infoText}>{placeDetails.hours}</Text>
-              </View>
+              {place.hours && (
+                <View style={styles.infoItem}>
+                  <Ionicons name="time" size={20} color="#5f6368" style={styles.infoIcon} />
+                  <Text style={styles.infoText}>{place.hours}</Text>
+                </View>
+              )}
+
+              {place.floors && (
+                <View style={styles.infoItem}>
+                  <Ionicons name="business" size={20} color="#5f6368" style={styles.infoIcon} />
+                  <Text style={styles.infoText}>{place.floors} floors</Text>
+                </View>
+              )}
 
               <View style={styles.infoItem}>
-                <Ionicons name="globe" size={20} color="#5f6368" style={styles.infoIcon} />
-                <Text style={styles.infoText}>{placeDetails.website}</Text>
-              </View>
-
-              <View style={styles.infoItem}>
-                <Ionicons name="call" size={20} color="#5f6368" style={styles.infoIcon} />
-                <Text style={styles.infoText}>{placeDetails.phone}</Text>
+                <Ionicons name="location" size={20} color="#5f6368" style={styles.infoIcon} />
+                <Text style={styles.infoText}>
+                  {place.coordinate[1].toFixed(4)}, {place.coordinate[0].toFixed(4)}
+                </Text>
               </View>
             </View>
           </ScrollView>
@@ -137,7 +128,7 @@ const PlaceDetailsModal: React.FC<PlaceDetailsModalProps> = ({ visible, place, o
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -206,7 +197,6 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#202124',
     marginRight: 4,
   },
   starsContainer: {
@@ -215,7 +205,12 @@ const styles = StyleSheet.create({
   },
   reviewsText: {
     fontSize: 14,
+  },
+  descriptionText: {
+    fontSize: 14,
     color: '#5F6368',
+    marginTop: 4,
+    lineHeight: 20,
   },
   modalActionButtons: {
     flexDirection: 'row',
