@@ -30,7 +30,7 @@ See `requirements.txt` for detailed system requirements and dependencies.
 - Expo CLI
 - GPS-enabled device for testing
 
-## � Q*uick Start
+## � Quick Start
 
 ```bash
 # 1. Clone the repository
