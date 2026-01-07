@@ -1,0 +1,196 @@
+# Campus Navigation App - System Requirements
+
+## System Requirements
+
+### Operating System
+- Windows 10/11 (64-bit)
+- macOS 10.15+ (for iOS development)
+- Ubuntu 18.04+ or similar Linux distribution
+
+### Development Environment
+- Node.js >= 18.0.0 (LTS recommended)
+- npm >= 8.0.0 OR yarn >= 1.22.0
+- Git >= 2.30.0
+- Python 3.8+ (for some native dependencies)
+
+### Mobile Development Tools
+- Android Studio (latest version)
+  - Android SDK API Level 24+ (Android 7.0+)
+  - Android Build Tools 34.0.0+
+  - Android Emulator or physical device
+- Xcode 14+ (macOS only, for iOS development)
+  - iOS 13.0+ support
+  - iOS Simulator or physical device
+
+### Global CLI Tools
+```bash
+npm install -g @expo/cli
+npm install -g eas-cli          # Optional, for production builds
+npm install -g typescript       # Optional, for global TS support
+```
+
+## Device Requirements
+
+### Android Devices
+- Android 7.0+ (API Level 24+)
+- RAM: 2GB minimum, 4GB+ recommended
+- Storage: 100MB+ free space
+- GPS/Location services enabled
+- Internet connection (WiFi or mobile data)
+
+### iOS Devices
+- iOS 13.0+
+- iPhone 6s or newer
+- iPad (6th generation) or newer
+- RAM: 2GB minimum
+- Storage: 100MB+ free space
+- Location services enabled
+- Internet connection
+
+## Development Dependencies
+
+### Core Framework
+- expo: ~54.0.31
+- react-native: 0.76.5
+- typescript: 5.9.2
+
+### Navigation & Maps
+- @rnmapbox/maps: 10.2.10
+- expo-location: ~19.0.8
+- @turf/turf: ^7.3.1
+
+### UI & Components
+- expo-router: ~4.0.14
+- react-native-gesture-handler: ~2.20.2
+- react-native-reanimated: ~3.16.1
+- react-native-screens: ~4.1.0
+
+### Device Features
+- expo-speech: ~14.0.8
+- expo-haptics: ~15.0.8
+- expo-linking: ~8.0.11
+
+### Development Tools
+- eslint: ^8.57.0
+- @typescript-eslint/parser: ^7.7.0
+- prettier: ^3.2.5
+
+## API Services & Keys
+
+### Mapbox Services
+- Mapbox Account (free tier available)
+- Custom Access Token: pk.eyJ1IjoidmFydW5rbTM2MCIsImEiOiJjbWVpNHA5eGswNjBtMmtxdGxia2cxN2w2In0.f88HMcQt5Lh9ZQGIpeNKug
+- Custom Style URL: mapbox://styles/varunkm360/cmk2grhzg00kd01s931qtec1p
+- Directions API access
+- Geocoding API access
+
+### Expo Services
+- Expo Account (free)
+- Development builds support
+- Over-the-air updates (optional)
+
+## Hardware Requirements
+
+### Development Machine
+- CPU: Intel i5/AMD Ryzen 5 or better
+- RAM: 8GB minimum, 16GB+ recommended
+- Storage: 10GB+ free space (for Android Studio, Xcode, dependencies)
+- Graphics: Integrated graphics sufficient
+- USB ports for device connection
+
+### Network Requirements
+- Stable internet connection (for map tiles, routing, development)
+- Minimum 10 Mbps for smooth development experience
+- Mobile data or WiFi for device testing
+
+## Installation Verification
+
+### Check Node.js Version
+```bash
+node --version    # Should be 18.0.0+
+npm --version     # Should be 8.0.0+
+```
+
+### Check Development Tools
+```bash
+# Android
+android --version
+adb version
+
+# iOS (macOS only)
+xcode-select --version
+xcrun simctl list devices
+
+# Expo
+npx expo --version
+```
+
+### Check Device Connection
+```bash
+# Android
+adb devices
+
+# iOS
+xcrun simctl list devices available
+```
+
+## Performance Recommendations
+
+### For Optimal Development Experience
+- Use SSD storage for faster builds
+- Close unnecessary applications during development
+- Use physical devices for GPS testing
+- Enable developer options on Android devices
+- Use latest stable versions of all tools
+
+### For Production Deployment
+- Test on multiple device types and OS versions
+- Verify GPS accuracy in different environments
+- Test with limited internet connectivity
+- Validate performance on lower-end devices
+- Test battery usage during navigation
+
+## Troubleshooting Common Issues
+
+### Node.js Issues
+- Use Node Version Manager (nvm) for version management
+- Clear npm cache: `npm cache clean --force`
+- Delete node_modules and reinstall if needed
+
+### Android Issues
+- Ensure Android SDK is properly configured
+- Check ANDROID_HOME environment variable
+- Enable USB debugging on device
+- Accept SDK licenses: `sdkmanager --licenses`
+
+### iOS Issues (macOS only)
+- Ensure Xcode command line tools are installed
+- Check iOS deployment target compatibility
+- Verify Apple Developer account setup for device testing
+
+### Expo Issues
+- Clear Expo cache: `npx expo start --clear`
+- Update Expo CLI: `npm install -g @expo/cli@latest`
+- Check Expo SDK compatibility
+
+## Security Considerations
+
+### API Keys
+- Keep Mapbox tokens secure
+- Use environment variables for sensitive data
+- Rotate tokens periodically
+- Monitor API usage and quotas
+
+### Device Permissions
+- Location permissions required for GPS functionality
+- Camera permissions (if QR code scanning added)
+- Storage permissions for offline maps (if implemented)
+
+### Network Security
+- Use HTTPS for all API calls
+- Validate SSL certificates
+- Implement proper error handling for network failures
+
+---
+
+**Note**: This requirements file covers the complete setup needed for Campus Navigation App development and deployment. Ensure all requirements are met before starting development.

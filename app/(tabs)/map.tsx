@@ -1,9 +1,10 @@
+import { CUSTOM_MAPBOX_CONFIG, CUSTOM_STYLE_CONFIG, styleManager } from "@/services/customMapboxStyle";
 import { CAMPUS_PLACES } from "@/src/data/campusPlaces";
 import { CAMPUS_BUILDINGS } from "@/src/data/geo/buildings";
 import { CAMPUS_BOUNDARY } from "@/src/data/geo/campusBoundary";
 import { CAMPUS_PATHS } from "@/src/data/geo/paths";
 import Mapbox from "@rnmapbox/maps";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -31,10 +32,8 @@ import FuturisticSearchBar from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
 import SettingsModal from "@/components/SettingsModal";
 
-// Set Mapbox access token - using environment variable or fallback
-const MAPBOX_TOKEN =
-  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
-  "pk.eyJ1IjoiYmVyaWNrcyIsImEiOiJjbWVkMmxhdDIwNXdyMmxzNTA3ZnprMHk3In0.hE8cQigI9JFbb9YBHnOsHQ";
+// Set Mapbox access token - using your custom token
+const MAPBOX_TOKEN = CUSTOM_MAPBOX_CONFIG.accessToken;
 
 // Initialize Mapbox safely
 try {
@@ -52,9 +51,7 @@ const DEFAULT_CAMERA_SETTINGS = {
 const MapScreen = () => {
   // const { theme } = useTheme();
   const [ready, setReady] = useState(false);
-  const [mapStyle, setMapStyle] = useState(
-    "mapbox://styles/mapbox/streets-v11"
-  );
+  const [mapStyle, setMapStyle] = useState(CUSTOM_MAPBOX_CONFIG.styleUrl);
   const [currentZoom, setCurrentZoom] = useState(
     DEFAULT_CAMERA_SETTINGS.zoomLevel
   );
@@ -265,15 +262,13 @@ const MapScreen = () => {
   };
 
   const toggleMapStyle = () => {
-    const styles = [
-      "mapbox://styles/mapbox/streets-v11",
-      "mapbox://styles/mapbox/satellite-v9",
-      "mapbox://styles/mapbox/outdoors-v11",
-    ];
-
-    const currentIndex = styles.indexOf(mapStyle);
-    const nextIndex = (currentIndex + 1) % styles.length;
-    setMapStyle(styles[nextIndex]);
+    const availableStyles = styleManager.getAvailableStyles();
+    const currentIndex = availableStyles.findIndex(style => style.url === mapStyle);
+    const nextIndex = (currentIndex + 1) % availableStyles.length;
+    const nextStyle = availableStyles[nextIndex];
+    
+    setMapStyle(nextStyle.url);
+    console.log(`Switched to ${nextStyle.name} style`);
   };
 
   if (!ready) {
@@ -297,11 +292,11 @@ const MapScreen = () => {
           styleURL={mapStyle}
           onPress={handleMapPressAndRoute}
           onDidFinishLoadingMap={() => console.log("Map loaded successfully")}
-          onDidFailLoadingMap={(error) => {
-            console.warn("Map loading failed:", error);
+          onDidFailLoadingMap={() => {
+            console.warn("Map loading failed");
           }}
-          onError={(error) => {
-            console.error("Map error:", error);
+          onError={() => {
+            console.error("Map error occurred");
           }}
         >
         <Mapbox.Camera
@@ -316,11 +311,18 @@ const MapScreen = () => {
         <Mapbox.ShapeSource id="campus-boundary" shape={CAMPUS_BOUNDARY}>
           <Mapbox.FillLayer
             id="campus-fill"
-            style={{ fillColor: "rgba(0, 122, 255, 0.1)" }}
+            style={{ 
+              fillColor: CUSTOM_STYLE_CONFIG.campusLayers.boundary.fillColor,
+              fillOpacity: 0.1 
+            }}
           />
           <Mapbox.LineLayer
             id="campus-line"
-            style={{ lineColor: "#007AFF", lineWidth: 2 }}
+            style={{ 
+              lineColor: CUSTOM_STYLE_CONFIG.campusLayers.boundary.strokeColor,
+              lineWidth: CUSTOM_STYLE_CONFIG.campusLayers.boundary.strokeWidth,
+              lineDasharray: CUSTOM_STYLE_CONFIG.campusLayers.boundary.strokeDasharray
+            }}
           />
         </Mapbox.ShapeSource>
 
@@ -352,11 +354,17 @@ const MapScreen = () => {
         >
           <Mapbox.FillLayer
             id="campus-building-fill"
-            style={{ fillColor: "#E0E0E0" }}
+            style={{ 
+              fillColor: CUSTOM_STYLE_CONFIG.campusLayers.buildings.fillColor,
+              fillOpacity: CUSTOM_STYLE_CONFIG.campusLayers.buildings.fillOpacity
+            }}
           />
           <Mapbox.LineLayer
             id="campus-building-outline"
-            style={{ lineColor: "#999", lineWidth: 1 }}
+            style={{ 
+              lineColor: CUSTOM_STYLE_CONFIG.campusLayers.buildings.strokeColor,
+              lineWidth: CUSTOM_STYLE_CONFIG.campusLayers.buildings.strokeWidth
+            }}
           />
         </Mapbox.ShapeSource>
 
@@ -365,8 +373,9 @@ const MapScreen = () => {
           <Mapbox.LineLayer
             id="path-line"
             style={{
-              lineColor: "#34C759",
-              lineWidth: 4,
+              lineColor: CUSTOM_STYLE_CONFIG.campusLayers.paths.strokeColor,
+              lineWidth: CUSTOM_STYLE_CONFIG.campusLayers.paths.strokeWidth,
+              lineOpacity: CUSTOM_STYLE_CONFIG.campusLayers.paths.strokeOpacity,
               lineCap: "round",
               lineJoin: "round",
             }}
@@ -379,21 +388,21 @@ const MapScreen = () => {
             <Mapbox.LineLayer
               id="route-line-background"
               style={{
-                lineColor: "#FFFFFF",
-                lineWidth: 10,
+                lineColor: CUSTOM_STYLE_CONFIG.campusLayers.route.backgroundStrokeColor,
+                lineWidth: CUSTOM_STYLE_CONFIG.campusLayers.route.backgroundStrokeWidth,
+                lineOpacity: CUSTOM_STYLE_CONFIG.campusLayers.route.backgroundStrokeOpacity,
                 lineCap: "round",
                 lineJoin: "round",
-                lineOpacity: 0.8,
               }}
             />
             <Mapbox.LineLayer
               id="route-line"
               style={{
-                lineColor: "#1A73E8",
-                lineWidth: 6,
+                lineColor: CUSTOM_STYLE_CONFIG.campusLayers.route.strokeColor,
+                lineWidth: CUSTOM_STYLE_CONFIG.campusLayers.route.strokeWidth,
+                lineOpacity: CUSTOM_STYLE_CONFIG.campusLayers.route.strokeOpacity,
                 lineCap: "round",
                 lineJoin: "round",
-                lineOpacity: 1,
               }}
             />
           </Mapbox.ShapeSource>

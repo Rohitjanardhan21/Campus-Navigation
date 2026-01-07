@@ -41,8 +41,7 @@ export interface NavigationStep {
   direction?: 'left' | 'right' | 'straight';
 }
 
-const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || 
-  "pk.eyJ1IjoiYmVyaWNrcyIsImEiOiJjbWVkMmxhdDIwNXdyMmxzNTA3ZnprMHk3In0.hE8cQigI9JFbb9YBHnOsHQ";
+const MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoidmFydW5rbTM2MCIsImEiOiJjbWVpNHA5eGswNjBtMmtxdGxia2cxN2w2In0.f88HMcQt5Lh9ZQGIpeNKug";
 
 export const getMapboxRoute = async (
   startCoord: [number, number],
