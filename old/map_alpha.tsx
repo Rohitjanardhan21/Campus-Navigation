@@ -1,31 +1,14 @@
-import { useLocation } from "@/hooks/useLocation";
-import { useNavigation } from "@/hooks/useNavigation";
-import { useSearch } from "@/hooks/useSearch";
 import {
   CUSTOM_MAPBOX_CONFIG,
   CUSTOM_STYLE_CONFIG,
   styleManager,
 } from "@/services/customMapboxStyle";
 import { CAMPUS_PLACES } from "@/src/data/campusPlaces";
+import { BUILDINGS } from "@/src/data/geo/buildings";
+import { CAMPUS_BOUNDARY } from "@/src/data/geo/campusBoundary";
 import { CAMPUS_PATHS } from "@/src/data/geo/paths";
-import { CampusBoundaryLayer } from "@/src/map/layers/CampusBoundaryLayer";
-import { CampusBuildingsLayer } from "@/src/map/layers/CampusBuildingsLayer";
-import { MapCamera } from "@/src/map/MapCamera";
-import { MapViewContainer } from "@/src/map/MapViewContainer";
-
-import SmartFloatingButtons from "@/components/FloatingButtons";
-import InstructionsPanel from "@/components/InstructionsPanel";
-import MenuModal from "@/components/MenuModal";
-import EnhancedNavigationPanel from "@/components/NavigationPanel";
-import PlaceDetailsModal from "@/components/PlaceDetailsModal";
-import RouteProgressBar from "@/components/RouteProgressBar";
-import FuturisticSearchBar from "@/components/SearchBar";
-import SearchResults from "@/components/SearchResults";
-import SettingsModal from "@/components/SettingsModal";
-
 import Mapbox from "@rnmapbox/maps";
-import { Feature, FeatureCollection, Point } from "geojson";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -36,18 +19,41 @@ import {
   View,
 } from "react-native";
 
+// Hooks
+import { useLocation } from "@/hooks/useLocation";
+import { useNavigation } from "@/hooks/useNavigation";
+import { useSearch } from "@/hooks/useSearch";
+// import { useTheme } from "@/hooks/useTheme";
+
+// Components
+import SmartFloatingButtons from "@/components/FloatingButtons";
+import InstructionsPanel from "@/components/InstructionsPanel";
+import MenuModal from "@/components/MenuModal";
+import EnhancedNavigationPanel from "@/components/NavigationPanel";
+import PlaceDetailsModal from "@/components/PlaceDetailsModal";
+import RouteProgressBar from "@/components/RouteProgressBar";
+import FuturisticSearchBar from "@/components/SearchBar";
+import SearchResults from "@/components/SearchResults";
+import SettingsModal from "@/components/SettingsModal";
+
+// Import Mapbox access token - using your custom token
+import { MAPBOX_TOKEN } from "@/services/config";
+
+// Initialize Mapbox safely
+try {
+  Mapbox.setAccessToken(MAPBOX_TOKEN);
+} catch (error) {
+  console.error("Failed to set Mapbox token:", error);
+}
+
 const DEFAULT_CAMERA_SETTINGS = {
   zoomLevel: 16,
-  centerCoordinate: [77.48, 12.94] as [number, number],
+  centerCoordinate: [77.48, 12.94] as [number, number], // Your specified location
   navigationZoomLevel: 17,
 };
 
-export default function MapScreen() {
-  const mapRef = useRef<Mapbox.MapView>(null);
-  const cameraRef = useRef<Mapbox.Camera>(null);
-
-  const { userLocation, goToCurrentLocation } = useLocation();
-
+const MapScreen = () => {
+  // const { theme } = useTheme();
   const [ready, setReady] = useState(false);
   const [mapStyle, setMapStyle] = useState(CUSTOM_MAPBOX_CONFIG.styleUrl);
   const [currentZoom, setCurrentZoom] = useState(
@@ -59,10 +65,15 @@ export default function MapScreen() {
   const [showInstructionsPanel, setShowInstructionsPanel] = useState(false);
   const [hasCenteredOnUser, setHasCenteredOnUser] = useState(false);
   const [isWaitingForLocation, setIsWaitingForLocation] = useState(true);
-
   const [selectedPlace, setSelectedPlace] = useState<
     (typeof CAMPUS_PLACES)[0] | null
   >(null);
+
+  const cameraRef = useRef<Mapbox.Camera>(null);
+  const mapRef = useRef<Mapbox.MapView>(null);
+
+  // Use custom hooks
+  const { userLocation, goToCurrentLocation } = useLocation();
 
   const {
     searchQuery,
@@ -95,37 +106,20 @@ export default function MapScreen() {
     handleImmediateMapNavigation,
   } = useNavigation();
 
-  const placesFeatureCollection = useMemo<FeatureCollection<Point>>(() => {
-    return {
-      type: "FeatureCollection",
-      features: CAMPUS_PLACES.map(
-        (place): Feature<Point> => ({
-          type: "Feature",
-          properties: {
-            id: place.id,
-            name: place.name,
-            type: place.type,
-          },
-          geometry: {
-            type: "Point",
-            coordinates: place.coordinate,
-          },
-        }),
-      ),
-    };
-  }, []);
-
   useEffect(() => {
     const initMap = async () => {
       try {
+        // Request location permissions first
         await Mapbox.requestAndroidLocationPermissions();
         setReady(true);
       } catch (error) {
         console.error("Map initialization error:", error);
+        // Continue anyway to prevent black screen
         setReady(true);
       }
     };
 
+    // Add a small delay to ensure everything is loaded
     const timer = setTimeout(() => {
       initMap();
     }, 100);
@@ -133,14 +127,17 @@ export default function MapScreen() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Update navigation progress when user location changes
   useEffect(() => {
     if (userLocation && isNavigating) {
       updateNavigationProgress(userLocation);
     }
   }, [userLocation, isNavigating, updateNavigationProgress]);
 
+  // Update camera when user location is first detected
   useEffect(() => {
     if (userLocation && cameraRef.current && ready && !hasCenteredOnUser) {
+      // Only update camera on first location detection
       const timer = setTimeout(() => {
         cameraRef.current?.setCamera({
           centerCoordinate: userLocation,
@@ -149,12 +146,13 @@ export default function MapScreen() {
         });
         setHasCenteredOnUser(true);
         setIsWaitingForLocation(false);
-      }, 500);
+      }, 500); // Small delay to ensure map is fully loaded
 
       return () => clearTimeout(timer);
     }
   }, [userLocation, ready, hasCenteredOnUser]);
 
+  // Set timeout for location detection
   useEffect(() => {
     if (ready && isWaitingForLocation) {
       const locationTimeout = setTimeout(() => {
@@ -162,7 +160,7 @@ export default function MapScreen() {
           setIsWaitingForLocation(false);
           console.log("Location timeout - using default location");
         }
-      }, 8000);
+      }, 8000); // 8 second timeout
 
       return () => clearTimeout(locationTimeout);
     }
@@ -202,7 +200,7 @@ export default function MapScreen() {
     if (cameraRef.current) {
       cameraRef.current.setCamera({
         centerCoordinate: result.coordinate,
-        zoomLevel: DEFAULT_CAMERA_SETTINGS.navigationZoomLevel,
+        zoomLevel: 17,
         animationDuration: 1000,
       });
     }
@@ -243,35 +241,6 @@ export default function MapScreen() {
       return;
     }
     await startNavigation(userLocation, place);
-  };
-
-  const handleBuildingPress = (feature: any) => {
-    const placeId = feature?.properties?.placeId;
-    if (placeId) {
-      const place = CAMPUS_PLACES.find((p) => p.id === placeId);
-      if (place) {
-        handlePlacePress(place);
-        return;
-      }
-    }
-
-    const geometry = feature?.geometry;
-    if (!geometry || geometry.type !== "Polygon") return;
-
-    const coord = geometry.coordinates?.[0]?.[0] as [number, number];
-    if (!coord) return;
-
-    const nearestPlace = CAMPUS_PLACES.find((place) => {
-      const dist = Math.sqrt(
-        Math.pow(place.coordinate[0] - coord[0], 2) +
-          Math.pow(place.coordinate[1] - coord[1], 2),
-      );
-      return dist < 0.001;
-    });
-
-    if (nearestPlace) {
-      handlePlacePress(nearestPlace);
-    }
   };
 
   const zoomIn = () => {
@@ -322,109 +291,165 @@ export default function MapScreen() {
 
   return (
     <View style={styles.page}>
-      <MapViewContainer
-        mapRef={mapRef}
-        styleURL={mapStyle}
-        onPress={handleMapPressAndRoute}
-      >
-        <MapCamera
-          cameraRef={cameraRef}
-          centerCoordinate={DEFAULT_CAMERA_SETTINGS.centerCoordinate}
-          zoomLevel={DEFAULT_CAMERA_SETTINGS.zoomLevel}
-        />
-
-        <CampusBoundaryLayer />
-
-        <Mapbox.ShapeSource id="campus-paths" shape={CAMPUS_PATHS}>
-          <Mapbox.LineLayer
-            id="campus-paths-line"
-            style={{
-              lineColor: CUSTOM_STYLE_CONFIG.campusLayers.paths.strokeColor,
-              lineWidth: CUSTOM_STYLE_CONFIG.campusLayers.paths.strokeWidth,
-              lineOpacity: CUSTOM_STYLE_CONFIG.campusLayers.paths.strokeOpacity,
-              lineCap: "round",
-              lineJoin: "round",
+      {ready ? (
+        <Mapbox.MapView
+          ref={mapRef}
+          style={styles.map}
+          styleURL={mapStyle}
+          onPress={handleMapPressAndRoute}
+          onDidFinishLoadingMap={() => console.log("Map loaded successfully")}
+        >
+          <Mapbox.Camera
+            ref={cameraRef}
+            defaultSettings={{
+              zoomLevel: DEFAULT_CAMERA_SETTINGS.zoomLevel,
+              centerCoordinate: DEFAULT_CAMERA_SETTINGS.centerCoordinate,
             }}
           />
-        </Mapbox.ShapeSource>
 
-        <CampusBuildingsLayer onBuildingPress={handleBuildingPress} />
-
-        {isNavigating && routeInfo?.feature && (
-          <Mapbox.ShapeSource id="route-source" shape={routeInfo.feature}>
-            <Mapbox.LineLayer
-              id="route-line-background"
+          {/* Campus Boundary */}
+          <Mapbox.ShapeSource id="campus-boundary" shape={CAMPUS_BOUNDARY}>
+            <Mapbox.FillLayer
+              id="campus-fill"
               style={{
-                lineColor:
-                  CUSTOM_STYLE_CONFIG.campusLayers.route
-                    .backgroundStrokeColor,
-                lineWidth:
-                  CUSTOM_STYLE_CONFIG.campusLayers.route
-                    .backgroundStrokeWidth,
-                lineOpacity:
-                  CUSTOM_STYLE_CONFIG.campusLayers.route
-                    .backgroundStrokeOpacity,
-                lineCap: "round",
-                lineJoin: "round",
+                fillColor: CUSTOM_STYLE_CONFIG.campusLayers.boundary.fillColor,
+                fillOpacity: 0.1,
               }}
             />
             <Mapbox.LineLayer
-              id="route-line"
+              id="campus-line"
               style={{
-                lineColor: CUSTOM_STYLE_CONFIG.campusLayers.route.strokeColor,
-                lineWidth: CUSTOM_STYLE_CONFIG.campusLayers.route.strokeWidth,
+                lineColor:
+                  CUSTOM_STYLE_CONFIG.campusLayers.boundary.strokeColor,
+                lineWidth:
+                  CUSTOM_STYLE_CONFIG.campusLayers.boundary.strokeWidth,
+                lineDasharray:
+                  CUSTOM_STYLE_CONFIG.campusLayers.boundary.strokeDasharray,
+              }}
+            />
+          </Mapbox.ShapeSource>
+
+          {/* Campus Buildings */}
+          <Mapbox.ShapeSource
+            id="campus-buildings"
+            shape={BUILDINGS}
+            onPress={(e) => {
+              const feature = e.features?.[0];
+              if (!feature) return;
+
+              const geometry = feature.geometry;
+              if (geometry.type !== "Polygon") return;
+              const coord = geometry.coordinates[0][0] as [number, number];
+
+              // Find nearest place to this building
+              const nearestPlace = CAMPUS_PLACES.find((place) => {
+                const dist = Math.sqrt(
+                  Math.pow(place.coordinate[0] - coord[0], 2) +
+                    Math.pow(place.coordinate[1] - coord[1], 2),
+                );
+                return dist < 0.001; // Very close
+              });
+
+              if (nearestPlace) {
+                handlePlacePress(nearestPlace);
+              }
+            }}
+          >
+            <Mapbox.FillLayer
+              id="campus-building-fill"
+              style={{
+                fillColor: CUSTOM_STYLE_CONFIG.campusLayers.buildings.fillColor,
+                fillOpacity:
+                  CUSTOM_STYLE_CONFIG.campusLayers.buildings.fillOpacity,
+              }}
+            />
+            <Mapbox.LineLayer
+              id="campus-building-outline"
+              style={{
+                lineColor:
+                  CUSTOM_STYLE_CONFIG.campusLayers.buildings.strokeColor,
+                lineWidth:
+                  CUSTOM_STYLE_CONFIG.campusLayers.buildings.strokeWidth,
+              }}
+            />
+          </Mapbox.ShapeSource>
+
+          {/* Campus Paths */}
+          <Mapbox.ShapeSource id="campus-paths" shape={CAMPUS_PATHS}>
+            <Mapbox.LineLayer
+              id="path-line"
+              style={{
+                lineColor: CUSTOM_STYLE_CONFIG.campusLayers.paths.strokeColor,
+                lineWidth: CUSTOM_STYLE_CONFIG.campusLayers.paths.strokeWidth,
                 lineOpacity:
-                  CUSTOM_STYLE_CONFIG.campusLayers.route.strokeOpacity,
+                  CUSTOM_STYLE_CONFIG.campusLayers.paths.strokeOpacity,
                 lineCap: "round",
                 lineJoin: "round",
               }}
             />
           </Mapbox.ShapeSource>
-        )}
 
-        <Mapbox.ShapeSource
-          id="campus-places"
-          shape={placesFeatureCollection}
-          onPress={(e) => {
-            const feature = e.features?.[0];
-            const placeId = feature?.properties?.id;
-            if (!placeId) return;
-            const place = CAMPUS_PLACES.find((p) => p.id === placeId);
-            if (place) handlePlacePress(place);
-          }}
-        >
-          <Mapbox.CircleLayer
-            id="campus-places-default"
-            style={{
-              circleColor: CUSTOM_STYLE_CONFIG.markers.default.color,
-              circleRadius: CUSTOM_STYLE_CONFIG.markers.default.size / 2,
-              circleStrokeColor:
-                CUSTOM_STYLE_CONFIG.markers.default.strokeColor,
-              circleStrokeWidth:
-                CUSTOM_STYLE_CONFIG.markers.default.strokeWidth,
-            }}
-          />
-          <Mapbox.CircleLayer
-            id="campus-places-selected"
-            filter={[
-              "==",
-              ["get", "id"],
-              selectedPlace?.id ? selectedPlace.id : "__none__",
-            ]}
-            style={{
-              circleColor: CUSTOM_STYLE_CONFIG.markers.selected.color,
-              circleRadius: CUSTOM_STYLE_CONFIG.markers.selected.size / 2,
-              circleStrokeColor:
-                CUSTOM_STYLE_CONFIG.markers.selected.strokeColor,
-              circleStrokeWidth:
-                CUSTOM_STYLE_CONFIG.markers.selected.strokeWidth,
-            }}
-          />
-        </Mapbox.ShapeSource>
+          {/* Route Display */}
+          {isNavigating && routeInfo?.feature && (
+            <Mapbox.ShapeSource id="route-source" shape={routeInfo.feature}>
+              <Mapbox.LineLayer
+                id="route-line-background"
+                style={{
+                  lineColor:
+                    CUSTOM_STYLE_CONFIG.campusLayers.route
+                      .backgroundStrokeColor,
+                  lineWidth:
+                    CUSTOM_STYLE_CONFIG.campusLayers.route
+                      .backgroundStrokeWidth,
+                  lineOpacity:
+                    CUSTOM_STYLE_CONFIG.campusLayers.route
+                      .backgroundStrokeOpacity,
+                  lineCap: "round",
+                  lineJoin: "round",
+                }}
+              />
+              <Mapbox.LineLayer
+                id="route-line"
+                style={{
+                  lineColor: CUSTOM_STYLE_CONFIG.campusLayers.route.strokeColor,
+                  lineWidth: CUSTOM_STYLE_CONFIG.campusLayers.route.strokeWidth,
+                  lineOpacity:
+                    CUSTOM_STYLE_CONFIG.campusLayers.route.strokeOpacity,
+                  lineCap: "round",
+                  lineJoin: "round",
+                }}
+              />
+            </Mapbox.ShapeSource>
+          )}
 
-        {userLocation && <Mapbox.UserLocation visible />}
-      </MapViewContainer>
+          {/* User Location */}
+          {userLocation && <Mapbox.UserLocation visible={true} />}
 
+          {/* Place Markers */}
+          {CAMPUS_PLACES.map((place) => (
+            <Mapbox.PointAnnotation
+              key={place.id}
+              id={place.id}
+              coordinate={place.coordinate}
+              onSelected={() => handlePlacePress(place)}
+            >
+              <View style={styles.marker} />
+            </Mapbox.PointAnnotation>
+          ))}
+        </Mapbox.MapView>
+      ) : (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#4285F4" />
+          <Text style={{ marginTop: 10, color: "#5F6368" }}>
+            Loading map...
+          </Text>
+          <Text style={{ marginTop: 5, fontSize: 12, color: "#9AA0A6" }}>
+            Getting your location
+          </Text>
+        </View>
+      )}
+
+      {/* Location Loading Indicator */}
       {isWaitingForLocation && !userLocation && (
         <View style={styles.locationLoadingContainer}>
           <View style={styles.locationLoadingCard}>
@@ -436,6 +461,7 @@ export default function MapScreen() {
         </View>
       )}
 
+      {/* Route Progress Bar */}
       {isNavigating && navigationSteps.length > 0 && (
         <RouteProgressBar
           currentInstruction={navigationSteps[currentStepIndex]}
@@ -444,6 +470,7 @@ export default function MapScreen() {
         />
       )}
 
+      {/* Search Bar */}
       <FuturisticSearchBar
         searchQuery={searchQuery}
         onSearch={handleSearch}
@@ -486,6 +513,7 @@ export default function MapScreen() {
         }}
       />
 
+      {/* Search Results */}
       {showResults && searchResults && searchResults.length > 0 && (
         <SearchResults
           results={searchResults}
@@ -494,6 +522,7 @@ export default function MapScreen() {
         />
       )}
 
+      {/* Navigation Panel */}
       {isNavigating && (
         <EnhancedNavigationPanel
           slideAnim={slideAnim}
@@ -506,6 +535,7 @@ export default function MapScreen() {
         />
       )}
 
+      {/* Floating Buttons */}
       <SmartFloatingButtons
         onCurrentLocation={handleGoToCurrentLocation}
         onZoomIn={zoomIn}
@@ -516,6 +546,7 @@ export default function MapScreen() {
         isNavigating={isNavigating}
       />
 
+      {/* Place Details Modal */}
       <PlaceDetailsModal
         visible={showPlaceDetails}
         place={selectedPlace}
@@ -526,6 +557,7 @@ export default function MapScreen() {
         onStartNavigation={handleStartNavigationFromPlace}
       />
 
+      {/* Menu Modal */}
       <MenuModal
         visible={showMenuModal}
         onClose={() => setShowMenuModal(false)}
@@ -544,7 +576,7 @@ export default function MapScreen() {
           setShowMenuModal(false);
           Alert.alert(
             "Help & Support",
-            "For help:\n- Tap search to find locations\n- Tap a location to navigate\n- Use voice guidance for directions",
+            "For help:\n• Tap search to find locations\n• Tap a location to navigate\n• Use voice guidance for directions",
           );
         }}
         onFeedback={() => {
@@ -564,11 +596,13 @@ export default function MapScreen() {
         }}
       />
 
+      {/* Settings Modal */}
       <SettingsModal
         visible={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
       />
 
+      {/* Turn-by-Turn Instructions Panel */}
       <InstructionsPanel
         instructions={navigationSteps}
         currentInstructionIndex={currentStepIndex}
@@ -577,7 +611,9 @@ export default function MapScreen() {
       />
     </View>
   );
-}
+};
+
+export default MapScreen;
 
 const styles = StyleSheet.create({
   page: {
@@ -585,6 +621,17 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  map: {
+    flex: 1,
+  },
+  marker: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#007AFF",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
   centerContainer: {
     flex: 1,
