@@ -4,7 +4,7 @@ export type CampusPlaceType =
   | "entrance"
   | "academic"
   | "hostel"
-  | "food"
+  | "canteen"
   | "admin"
   | "sports"
   | "medical"

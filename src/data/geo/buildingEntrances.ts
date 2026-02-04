@@ -29,4 +29,12 @@ export const BUILDING_ENTRANCES: BuildingEntrance[] = [
     type: "side",
     accessibility: true,
   },
+  {
+    id: "secondblock-side",
+    buildingId: "second-block",
+    name: "Side Entrance",
+    coordinate: [77.438176, 12.862676],
+    type: "side",
+    accessibility: true,
+  },
 ];

@@ -28,4 +28,12 @@ export const CAMPUS_PLACES: CampusPlace[] = [
     description: "Academic Block",
     hours: "6:00 AM - 10:00 PM",
   },
+  {
+    id: "south-canteen",
+    name: "South Canteen",
+    coordinate: [77.439306, 12.862325],
+    type: "canteen",
+    description: "Fourth Block Canteen",
+    hours: "6:00 AM - 10:00 PM",
+  },
 ];
