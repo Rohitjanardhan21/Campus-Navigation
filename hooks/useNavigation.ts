@@ -1,11 +1,18 @@
 import {
-    calculateRouteProgress as calculateMapboxProgress,
-    getMapboxRoute,
-    getNextStep as getNextMapboxStep,
-    NavigationStep
+  calculateRouteProgress as calculateMapboxProgress,
+  getNextStep as getNextMapboxStep,
+  NavigationStep,
 } from "@/features/navigation/mapboxRouting";
+import { getCampusRoute } from "@/features/navigation/campusRouting";
 import { CampusPlace } from "@/src/domain/campus";
 import { Feature, LineString } from "geojson";
+import {
+  distance as turfDistance,
+  length as turfLength,
+  lineSlice,
+  nearestPointOnLine,
+  point,
+} from "@turf/turf";
 import { useCallback, useRef, useState } from "react";
 import { Alert, Animated, Easing } from "react-native";
 
@@ -51,33 +58,141 @@ export const useNavigation = () => {
   const [needsRerouting, setNeedsRerouting] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(-100)).current;
+  const lastUserLocationRef = useRef<[number, number] | null>(null);
+  const lastStepDistanceRef = useRef<number | null>(null);
+  const lastRemainingDistanceRef = useRef<number | null>(null);
+  const lastRerouteLocationRef = useRef<[number, number] | null>(null);
 
   // Update location tracking for turn-by-turn navigation
   const updateNavigationProgress = useCallback((userLocation: [number, number]) => {
     if (!isNavigating || navigationSteps.length === 0) return;
 
     // Calculate current progress
-    const progress = calculateMapboxProgress(userLocation, navigationSteps, currentStepIndex);
-    setRouteProgress(progress);
+    const progress = calculateMapboxProgress(
+      userLocation,
+      navigationSteps,
+      currentStepIndex
+    );
 
-    // Check if we need to advance to next step
-    const { nextIndex, shouldAdvance } = getNextMapboxStep(userLocation, navigationSteps, currentStepIndex);
-    
-    if (shouldAdvance && nextIndex !== currentStepIndex) {
-      setCurrentStepIndex(nextIndex);
+    let isOffRoute = progress.isOffRoute;
+    let remainingDistanceMeters = progress.totalDistanceRemaining;
+    if (routeInfo?.feature) {
+      try {
+        const nearest = nearestPointOnLine(
+          routeInfo.feature,
+          point(userLocation)
+        );
+        const dist = turfDistance(
+          point(userLocation),
+          nearest,
+          { units: "meters" }
+        );
+        isOffRoute = dist > 15; // meters off route
+
+        const coords = routeInfo.feature.geometry
+          .coordinates as [number, number][];
+        if (coords.length > 1) {
+          const lineToEnd = lineSlice(
+            nearest,
+            point(coords[coords.length - 1]),
+            routeInfo.feature
+          );
+          const kmRemaining = turfLength(lineToEnd, { units: "kilometers" });
+          remainingDistanceMeters = Math.round(kmRemaining * 1000);
+        }
+      } catch (error) {
+        console.warn("Off-route check failed:", error);
+      }
     }
 
+    const distanceToNextStep = navigationSteps[currentStepIndex]
+      ? Math.round(
+          turfDistance(
+            point(userLocation),
+            point(navigationSteps[currentStepIndex].coordinate),
+            { units: "meters" }
+          )
+        )
+      : progress.distanceToNextStep;
+
+    setRouteProgress({
+      ...progress,
+      isOffRoute,
+      distanceToNextStep,
+      totalDistanceRemaining: remainingDistanceMeters,
+      estimatedTimeRemaining: Math.round(remainingDistanceMeters / 1.4),
+    });
+
+    // Check if we need to advance to next step
+    const currentStep = navigationSteps[currentStepIndex];
+    if (currentStep) {
+      const distanceToStep = turfDistance(
+        point(userLocation),
+        point(currentStep.coordinate),
+        { units: "meters" }
+      );
+
+      const lastLocation = lastUserLocationRef.current;
+      const movedMeters = lastLocation
+        ? turfDistance(point(lastLocation), point(userLocation), {
+            units: "meters",
+          })
+        : 0;
+
+      const lastStepDistance = lastStepDistanceRef.current;
+      const isGettingCloser =
+        lastStepDistance === null || distanceToStep < lastStepDistance - 1;
+
+      if (
+        distanceToStep < 10 &&
+        movedMeters > 3 &&
+        isGettingCloser &&
+        currentStepIndex < navigationSteps.length - 1
+      ) {
+        setCurrentStepIndex(currentStepIndex + 1);
+      }
+
+      lastStepDistanceRef.current = distanceToStep;
+    }
+
+    lastUserLocationRef.current = userLocation;
+
+    const lastRemaining = lastRemainingDistanceRef.current;
+    const lastRerouteLocation = lastRerouteLocationRef.current;
+    const movedSinceReroute = lastRerouteLocation
+      ? turfDistance(point(lastRerouteLocation), point(userLocation), {
+          units: "meters",
+        })
+      : 0;
+
+    const isGettingFurther =
+      lastRemaining !== null && remainingDistanceMeters > lastRemaining + 10;
+
     // Check if rerouting is needed
-    if (progress.isOffRoute && !needsRerouting) {
+    if ((isOffRoute || isGettingFurther) && !needsRerouting) {
       setNeedsRerouting(true);
-      // Auto-reroute after 5 seconds of being off route
+      // Auto-reroute after 2 seconds of being off route
       setTimeout(() => {
         if (selectedDestination) {
           handleRerouting(userLocation, selectedDestination);
         }
-      }, 5000);
+      }, 2000);
     }
-  }, [isNavigating, navigationSteps, currentStepIndex, needsRerouting, selectedDestination]);
+
+    lastRemainingDistanceRef.current = remainingDistanceMeters;
+    if (isOffRoute || isGettingFurther) {
+      if (movedSinceReroute > 5 || !lastRerouteLocation) {
+        lastRerouteLocationRef.current = userLocation;
+      }
+    }
+  }, [
+    isNavigating,
+    navigationSteps,
+    currentStepIndex,
+    needsRerouting,
+    selectedDestination,
+    routeInfo,
+  ]);
 
   // Handle rerouting when user goes off path
   const handleRerouting = useCallback(async (
@@ -86,7 +201,11 @@ export const useNavigation = () => {
   ) => {
     try {
       setNeedsRerouting(false);
-      const newRoute = await calculateRoute(userLocation, getSafeCoordinates(destination)!);
+      const newRoute = await calculateRoute(
+        userLocation,
+        getSafeCoordinates(destination)!,
+        destination
+      );
       
       if (newRoute) {
         setRouteInfo(newRoute);
@@ -148,7 +267,8 @@ export const useNavigation = () => {
   const calculateRoute = useCallback(
     async (
       startCoords: [number, number],
-      endCoords: [number, number]
+      endCoords: [number, number],
+      destination?: CampusPlace
     ): Promise<RouteInfo | null> => {
       try {
         if (
@@ -161,20 +281,24 @@ export const useNavigation = () => {
 
         console.log("Calculating route from:", startCoords, "to:", endCoords);
 
-        // Use Mapbox Directions API for real road routing
-        const mapboxRoute = await getMapboxRoute(startCoords, endCoords);
-        
-        if (!mapboxRoute) {
-          console.error("No route found from Mapbox");
+        // Use campus paths routing
+        const campusRoute = await getCampusRoute(
+          startCoords,
+          endCoords,
+          destination
+        );
+
+        if (!campusRoute) {
+          console.error("No route found from campus paths");
           return null;
         }
 
         return {
-          coordinates: mapboxRoute.coordinates,
-          duration: mapboxRoute.duration,
-          distance: mapboxRoute.distance,
-          feature: mapboxRoute.feature,
-          steps: mapboxRoute.steps
+          coordinates: campusRoute.coordinates,
+          duration: campusRoute.duration,
+          distance: campusRoute.distance,
+          feature: campusRoute.feature,
+          steps: campusRoute.steps,
         };
       } catch (error) {
         console.error("Route calculation error:", error);
@@ -208,7 +332,11 @@ export const useNavigation = () => {
       setIsCalculatingRoute(true);
 
       try {
-        const route = await calculateRoute(userLocation, destCoords);
+        const route = await calculateRoute(
+          userLocation,
+          destCoords,
+          destination as CampusPlace
+        );
 
         if (route) {
           setRouteInfo(route);

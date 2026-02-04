@@ -7,6 +7,7 @@ import {
   styleManager,
 } from "@/services/customMapboxStyle";
 import { CAMPUS_PLACES } from "@/src/data/campusPlaces";
+import { BUILDING_ENTRANCES } from "@/src/data/geo/buildingEntrances";
 import { CAMPUS_PATHS } from "@/src/data/geo/paths";
 import { CampusBoundaryLayer } from "@/src/map/layers/CampusBoundaryLayer";
 import { CampusBuildingsLayer } from "@/src/map/layers/CampusBuildingsLayer";
@@ -35,6 +36,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { lineSlice, nearestPointOnLine, point } from "@turf/turf";
 
 const DEFAULT_CAMERA_SETTINGS = {
   zoomLevel: 16,
@@ -94,6 +96,71 @@ export default function MapScreen() {
     stopNavigation,
     handleImmediateMapNavigation,
   } = useNavigation();
+
+  const displayRouteFeature = useMemo(() => {
+    if (!routeInfo?.feature) return null;
+    if (!userLocation) return routeInfo.feature;
+    try {
+      const coords = routeInfo.feature.geometry
+        .coordinates as [number, number][];
+      if (coords.length < 2) return routeInfo.feature;
+      const nearest = nearestPointOnLine(
+        routeInfo.feature,
+        point(userLocation)
+      );
+      const lineToEnd = lineSlice(
+        nearest,
+        point(coords[coords.length - 1]),
+        routeInfo.feature
+      );
+      const slicedCoords = (lineToEnd.geometry.coordinates ||
+        []) as [number, number][];
+      if (slicedCoords.length < 2) return routeInfo.feature;
+      return lineToEnd as Feature<any>;
+    } catch (error) {
+      console.warn("Route slicing failed:", error);
+      return routeInfo.feature;
+    }
+  }, [routeInfo, userLocation]);
+
+  const placeEntrances = useMemo(() => {
+    const map = new Map<string, typeof BUILDING_ENTRANCES>();
+    for (const entrance of BUILDING_ENTRANCES) {
+      const list = map.get(entrance.buildingId) ?? [];
+      list.push(entrance);
+      map.set(entrance.buildingId, list);
+    }
+    return map;
+  }, []);
+
+  const getEntrancesForPlace = (placeId?: string) => {
+    if (!placeId) return [];
+    return placeEntrances.get(placeId) ?? [];
+  };
+
+  const getPreferredEntrance = (
+    placeId?: string,
+    userLoc?: [number, number] | null,
+  ) => {
+    const entrances = getEntrancesForPlace(placeId);
+    if (entrances.length === 0) return null;
+    if (userLoc) {
+      let nearest = entrances[0];
+      let nearestScore = Number.POSITIVE_INFINITY;
+      for (const entrance of entrances) {
+        const dx = entrance.coordinate[0] - userLoc[0];
+        const dy = entrance.coordinate[1] - userLoc[1];
+        const score = dx * dx + dy * dy;
+        if (score < nearestScore) {
+          nearest = entrance;
+          nearestScore = score;
+        }
+      }
+      return nearest;
+    }
+    const main = entrances.find((e) => e.type === "main");
+    return main ?? entrances[0];
+  };
 
   const placesFeatureCollection = useMemo<FeatureCollection<Point>>(() => {
     return {
@@ -206,6 +273,9 @@ export default function MapScreen() {
         animationDuration: 1000,
       });
     }
+
+    setSelectedPlace(result);
+    setShowPlaceDetails(true);
   };
 
   const handleQuickNavigation = async (item: (typeof CAMPUS_PLACES)[0]) => {
@@ -219,6 +289,15 @@ export default function MapScreen() {
 
     try {
       handleSelectResult(item);
+      const preferredEntrance = getPreferredEntrance(item.id, userLocation);
+      if (preferredEntrance) {
+        await startNavigation(userLocation, {
+          id: preferredEntrance.id,
+          name: `${item.name} - ${preferredEntrance.name}`,
+          coordinate: preferredEntrance.coordinate,
+        });
+        return;
+      }
       await startNavigation(userLocation, item);
     } catch (error) {
       console.error("Error in quick navigation:", error);
@@ -242,7 +321,34 @@ export default function MapScreen() {
       );
       return;
     }
+    const preferredEntrance = getPreferredEntrance(place.id, userLocation);
+    if (preferredEntrance) {
+      await startNavigation(userLocation, {
+        id: preferredEntrance.id,
+        name: `${place.name} - ${preferredEntrance.name}`,
+        coordinate: preferredEntrance.coordinate,
+      });
+      return;
+    }
     await startNavigation(userLocation, place);
+  };
+
+  const handleStartNavigationFromEntrance = async (
+    entrance: (typeof BUILDING_ENTRANCES)[0],
+  ) => {
+    setShowPlaceDetails(false);
+    if (!userLocation) {
+      Alert.alert(
+        "Location Required",
+        "Please wait for your location to be detected",
+      );
+      return;
+    }
+    await startNavigation(userLocation, {
+      id: entrance.id,
+      name: entrance.name,
+      coordinate: entrance.coordinate,
+    });
   };
 
   const handleBuildingPress = (feature: any) => {
@@ -350,8 +456,38 @@ export default function MapScreen() {
 
         <CampusBuildingsLayer onBuildingPress={handleBuildingPress} />
 
-        {isNavigating && routeInfo?.feature && (
-          <Mapbox.ShapeSource id="route-source" shape={routeInfo.feature}>
+        {BUILDING_ENTRANCES.length > 0 && (
+          <Mapbox.ShapeSource
+            id="building-entrances"
+            shape={{
+              type: "FeatureCollection",
+              features: BUILDING_ENTRANCES.map((entrance) => ({
+                type: "Feature",
+                properties: {
+                  id: entrance.id,
+                  buildingId: entrance.buildingId,
+                },
+                geometry: {
+                  type: "Point",
+                  coordinates: entrance.coordinate,
+                },
+              })),
+            }}
+          >
+            <Mapbox.CircleLayer
+              id="building-entrances-layer"
+              style={{
+                circleColor: "#FBBC04",
+                circleRadius: 4,
+                circleStrokeColor: "#FFFFFF",
+                circleStrokeWidth: 2,
+              }}
+            />
+          </Mapbox.ShapeSource>
+        )}
+
+        {isNavigating && displayRouteFeature && (
+          <Mapbox.ShapeSource id="route-source" shape={displayRouteFeature}>
             <Mapbox.LineLayer
               id="route-line-background"
               style={{
@@ -519,11 +655,15 @@ export default function MapScreen() {
       <PlaceDetailsModal
         visible={showPlaceDetails}
         place={selectedPlace}
+        entrances={
+          selectedPlace ? getEntrancesForPlace(selectedPlace.id) : []
+        }
         onClose={() => {
           setShowPlaceDetails(false);
           setSelectedPlace(null);
         }}
         onStartNavigation={handleStartNavigationFromPlace}
+        onStartNavigationToEntrance={handleStartNavigationFromEntrance}
       />
 
       <MenuModal

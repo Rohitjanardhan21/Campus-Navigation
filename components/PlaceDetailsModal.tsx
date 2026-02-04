@@ -1,4 +1,5 @@
-import { CampusPlace } from '@/src/domain/campus';
+import { CampusPlace } from "@/src/domain/campus";
+import { BuildingEntrance } from "@/src/data/geo/buildingEntrances";
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -25,11 +26,20 @@ const iconMap: Record<string, string> = {
 interface PlaceDetailsModalProps {
   visible: boolean;
   place: CampusPlace | null;
+  entrances?: BuildingEntrance[];
   onClose: () => void;
   onStartNavigation: (place: CampusPlace) => void;
+  onStartNavigationToEntrance?: (entrance: BuildingEntrance) => void;
 }
 
-const PlaceDetailsModal: React.FC<PlaceDetailsModalProps> = ({ visible, place, onClose, onStartNavigation }) => {
+const PlaceDetailsModal: React.FC<PlaceDetailsModalProps> = ({
+  visible,
+  place,
+  entrances = [],
+  onClose,
+  onStartNavigation,
+  onStartNavigationToEntrance,
+}) => {
   // const { theme } = useTheme();
   
   if (!place) return null;
@@ -112,6 +122,29 @@ const PlaceDetailsModal: React.FC<PlaceDetailsModalProps> = ({ visible, place, o
                 </Text>
               </View>
             </View>
+
+            {entrances.length > 0 && (
+              <View style={styles.entrancesSection}>
+                <Text style={styles.sectionTitle}>Entrances</Text>
+                {entrances.map((entrance) => (
+                  <TouchableOpacity
+                    key={entrance.id}
+                    style={styles.entranceRow}
+                    onPress={() => onStartNavigationToEntrance?.(entrance)}
+                  >
+                    <Ionicons name="enter" size={18} color="#1A73E8" style={styles.infoIcon} />
+                    <View style={styles.entranceTextWrap}>
+                      <Text style={styles.entranceName}>{entrance.name}</Text>
+                      <Text style={styles.entranceMeta}>
+                        {entrance.type ? entrance.type : "entrance"}
+                        {entrance.accessibility ? " • accessible" : ""}
+                      </Text>
+                    </View>
+                    <Ionicons name="navigate" size={18} color="#1A73E8" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </ScrollView>
 
           <View style={styles.modalFooter}>
@@ -251,6 +284,35 @@ const createStyles = (theme: any) => StyleSheet.create({
     padding: 20,
     borderTopWidth: 1,
     borderTopColor: '#E8EAED',
+  },
+  entrancesSection: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#202124",
+    marginBottom: 8,
+  },
+  entranceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F3F4",
+  },
+  entranceTextWrap: {
+    flex: 1,
+  },
+  entranceName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#202124",
+  },
+  entranceMeta: {
+    fontSize: 12,
+    color: "#5F6368",
+    marginTop: 2,
   },
   startNavigationButton: {
     backgroundColor: '#1A73E8',

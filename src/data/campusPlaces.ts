@@ -20,4 +20,12 @@ export const CAMPUS_PLACES: CampusPlace[] = [
     description: "Administrative and Academic Block",
     hours: "6:00 AM - 10:00 PM",
   },
+  {
+    id: "second-block",
+    name: "Second Block",
+    coordinate: [77.438359, 12.862898],
+    type: "academic",
+    description: "Academic Block",
+    hours: "6:00 AM - 10:00 PM",
+  },
 ];

@@ -6,9 +6,41 @@ export const CAMPUS_PATHS: FeatureCollection<LineString> = {
     {
       type: "Feature",
       properties: {
+        id: "maintobikepark",
+        name: "maintobikepark",
+        level: 0,
+      },
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [77.437385749109112, 12.862897079974539],
+          [77.437524016255509, 12.863302253064161],
+          [77.437680681886391, 12.863663991100974],
+        ],
+      },
+    },
+    {
+      type: "Feature",
+      properties: {
+        id: "roadtofirstblock",
+        name: "roadtofirstblock",
+        level: 1,
+      },
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [77.437502203215317, 12.863238332956595],
+          [77.437798181109528, 12.863105306580405],
+        ],
+      },
+    },
+    {
+      type: "Feature",
+      properties: {
         fid: 1,
         id: "maingate_to_campus",
         name: "MainGate->Campus",
+        level: 0,
       },
       geometry: {
         type: "LineString",
@@ -25,6 +57,7 @@ export const CAMPUS_PATHS: FeatureCollection<LineString> = {
         fid: 2,
         id: "Block1_to_Block6",
         name: "Block1 to Block6",
+        level: 0,
       },
       geometry: {
         type: "LineString",
@@ -45,6 +78,7 @@ export const CAMPUS_PATHS: FeatureCollection<LineString> = {
         fid: 3,
         id: "Main_to_PUFountain",
         name: "Main to PU Fountain",
+        level: 0,
       },
       geometry: {
         type: "LineString",

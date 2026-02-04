@@ -32,5 +32,26 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
       },
     },
+    {
+      type: "Feature",
+      properties: {
+        placeId: "second-block",
+        name: "Second Block",
+        type: "academic",
+        floors: 4,
+      },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [77.438351016962528, 12.863229554238004],
+            [77.438095404617442, 12.862650772126623],
+            [77.438342771403029, 12.862530192352049],
+            [77.438590138188601, 12.863104955424017],
+            [77.438351016962528, 12.863229554238004],
+          ],
+        ],
+      },
+    },
   ],
 };

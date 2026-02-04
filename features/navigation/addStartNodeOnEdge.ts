@@ -5,9 +5,10 @@ export function addStartNodeOnEdge(
   graph: Graph,
   snappedCoord: [number, number],
   segmentStart: [number, number],
-  segmentEnd: [number, number]
+  segmentEnd: [number, number],
+  nodeId: string = "user-start"
 ): { graph: Graph; startNodeId: string } {
-  const startId = "user-start";
+  const startId = nodeId;
 
   graph.nodes[startId] = {
     id: startId,
