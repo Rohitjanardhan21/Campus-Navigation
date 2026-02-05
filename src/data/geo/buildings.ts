@@ -6,7 +6,8 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
     {
       type: "Feature",
       properties: {
-        Block: "Block 6",
+        Block: "Sixth Block",
+        id: "sixth-block",
       },
       geometry: {
         coordinates: [
@@ -21,12 +22,13 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "15f53c17d07029ab69cd6f4be8cac233",
+      id: "sixth-block",
     },
     {
       type: "Feature",
       properties: {
         Block: "PU Block",
+        id: "pu-block",
       },
       geometry: {
         coordinates: [
@@ -47,12 +49,13 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "3c47c0c15048aff5c4963afef899d7eb",
+      id: "pu-block",
     },
     {
       type: "Feature",
       properties: {
-        Block: " architecture",
+        Block: "Architecture Block",
+        id: "architecture-block",
       },
       geometry: {
         coordinates: [
@@ -69,12 +72,13 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "406a5f16df78cde4a555668d961fc62b",
+      id: "architecture-block",
     },
     {
       type: "Feature",
       properties: {
-        Block: 4,
+        Block: "Fourth Block",
+        id: "fourth-block",
       },
       geometry: {
         coordinates: [
@@ -90,12 +94,13 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "6f6eb1c1534789107abf08e699de167c",
+      id: "fourth-block",
     },
     {
       type: "Feature",
       properties: {
-        Block: "Chapel ",
+        Block: "Chapel",
+        id: "chapel",
       },
       geometry: {
         coordinates: [
@@ -110,12 +115,13 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "774cefb232b7f23e9bc25662723d978a",
+      id: "chapel",
     },
     {
       type: "Feature",
       properties: {
-        Block: "Block 3",
+        Block: "Third Block",
+        id: "third-block",
       },
       geometry: {
         coordinates: [
@@ -130,12 +136,13 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "89b4eda704de97ebb7d8508a2941b1da",
+      id: "third-block",
     },
     {
       type: "Feature",
       properties: {
-        Block: "Devdan",
+        Block: "Devadan Hall",
+        id: "devadan-hall",
       },
       geometry: {
         coordinates: [
@@ -150,12 +157,13 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "96c6a7a4fd51261e3ad9396340d35dda",
+      id: "devadan-hall",
     },
     {
       type: "Feature",
       properties: {
-        Block: "Block 2",
+        Block: "Second Block",
+        id: "second-block",
       },
       geometry: {
         coordinates: [
@@ -170,33 +178,13 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "a2b3400b2000e4762d844197ff501883",
+      id: "second-block",
     },
     {
       type: "Feature",
       properties: {
-        Block: "Block 5",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.439348, 12.862186],
-            [77.439527, 12.862108],
-            [77.43969, 12.862478],
-            [77.439499, 12.862548],
-            [77.439416, 12.862365],
-            [77.439347, 12.86221],
-            [77.439348, 12.862186],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "a4fa87b3be577dce3d3c44e1191a003c",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Block 5",
+        Block: "Fifth Block",
+        id: "fifth-block",
       },
       geometry: {
         coordinates: [
@@ -211,12 +199,13 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "d1b21180ef2167dd9410462dabc11c49",
+      id: "fifth-block",
     },
     {
       type: "Feature",
       properties: {
-        Block: "Block 1",
+        Block: "First Block",
+        id: "first-block",
       },
       geometry: {
         coordinates: [
@@ -239,7 +228,7 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
         ],
         type: "Polygon",
       },
-      id: "e2d89bf8bcb4b3b38fdf87dffd337822",
+      id: "first-block",
     },
   ],
 };
