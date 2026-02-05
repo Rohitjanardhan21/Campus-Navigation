@@ -1,145 +1,176 @@
-// Custom Mapbox Style Integration
+// customMapboxStyle.ts
+// Centralized Mapbox style + campus overlay configuration
+
+/**
+ * Mapbox style configuration
+ * NOTE:
+ * - Mapbox Studio owns base map styling
+ * - App owns campus overlays (GeoJSON layers)
+ */
+
 export const CUSTOM_MAPBOX_CONFIG = {
-  // Your custom access token
-  accessToken: "pk.eyJ1IjoidmFydW5rbTM2MCIsImEiOiJjbWVpNHA5eGswNjBtMmtxdGxia2cxN2w2In0.f88HMcQt5Lh9ZQGIpeNKug",
-  
-  // Your custom style URL
-  styleUrl: "mapbox://styles/varunkm360/cmk2grhzg00kd01s931qtec1p",
-  
-  // Alternative styles you can switch between
+  /**
+   * Primary campus style (Mapbox Studio)
+   */
+  styleUrl: "mapbox://styles/bericks/cmkhz0mno003e01sg4xhi6rvm",
+
+  /**
+   * Optional styles (for future switching / debugging)
+   * These do NOT affect campus locking logic
+   */
   availableStyles: [
     {
       id: "custom",
       name: "Custom Campus Style",
-      url: "mapbox://styles/varunkm360/cmk2grhzg00kd01s931qtec1p",
-      description: "Your custom designed campus map"
+      url: "mapbox://styles/bericks/cmkhz0mno003e01sg4xhi6rvm",
+      description: "Clean campus-focused base map",
     },
     {
       id: "streets",
       name: "Streets",
       url: "mapbox://styles/mapbox/streets-v12",
-      description: "Standard street map"
-    },
-    {
-      id: "satellite",
-      name: "Satellite",
-      url: "mapbox://styles/mapbox/satellite-v9",
-      description: "Satellite imagery"
+      description: "Standard Mapbox streets",
     },
     {
       id: "outdoors",
       name: "Outdoors",
       url: "mapbox://styles/mapbox/outdoors-v12",
-      description: "Outdoor activities focused"
-    }
-  ]
+      description: "Outdoor-focused map",
+    },
+    {
+      id: "satellite",
+      name: "Satellite",
+      url: "mapbox://styles/mapbox/satellite-v9",
+      description: "Satellite imagery",
+    },
+  ],
 };
 
-// Style configuration for different map elements
+/**
+ * Styling for APP-OWNED GeoJSON layers
+ * These styles DO NOT modify the base map
+ */
 export const CUSTOM_STYLE_CONFIG = {
-  // Campus-specific layer styling
   campusLayers: {
-    // Building styling that works with your custom style
-    buildings: {
-      fillColor: "#E8F4FD",
-      fillOpacity: 0.8,
-      strokeColor: "#1A73E8",
-      strokeWidth: 1
-    },
-    
-    // Campus boundary styling
+    /**
+     * Campus boundary (visual cue only)
+     */
     boundary: {
       fillColor: "rgba(26, 115, 232, 0.1)",
       strokeColor: "#1A73E8",
       strokeWidth: 2,
-      strokeDasharray: [5, 5]
+      strokeDasharray: [5, 5],
     },
-    
-    // Walking paths styling
+
+    /**
+     * 2D campus buildings (navigation & interaction)
+     */
+    buildings: {
+      fillColor: "#E8F4FD",
+      fillOpacity: 0.8,
+      strokeColor: "#1A73E8",
+      strokeWidth: 1,
+    },
+
+    /**
+     * Campus walking paths
+     */
     paths: {
       strokeColor: "#34A853",
       strokeWidth: 3,
-      strokeOpacity: 0.8
+      strokeOpacity: 0.8,
     },
-    
-    // Route styling that complements your custom style
+
+    /**
+     * Navigation route (future use)
+     */
     route: {
       strokeColor: "#EA4335",
       strokeWidth: 6,
       strokeOpacity: 1,
       backgroundStrokeColor: "#FFFFFF",
       backgroundStrokeWidth: 10,
-      backgroundStrokeOpacity: 0.8
-    }
+      backgroundStrokeOpacity: 0.8,
+    },
   },
-  
-  // Marker styling
+
+  /**
+   * Marker styling (future use)
+   */
   markers: {
     default: {
       color: "#1A73E8",
       size: 12,
       strokeColor: "#FFFFFF",
-      strokeWidth: 2
+      strokeWidth: 2,
     },
     selected: {
       color: "#EA4335",
       size: 16,
       strokeColor: "#FFFFFF",
-      strokeWidth: 3
+      strokeWidth: 3,
     },
     userLocation: {
       color: "#4285F4",
       size: 14,
       strokeColor: "#FFFFFF",
-      strokeWidth: 2
-    }
-  }
+      strokeWidth: 2,
+    },
+  },
 };
 
-// Function to load local style.json if needed
-export const loadLocalStyle = async () => {
-  try {
-    // If you want to use the local style.json file instead of the URL
-    const styleJson = require('@/assets/mapbox/style.json');
-    return styleJson;
-  } catch (error) {
-    console.warn('Local style.json not found, using remote style URL');
-    return null;
-  }
-};
+/**
+ * Style manager
+ * Handles base map style selection only
+ */
+class CustomStyleManager {
+  private currentStyleId: string = "custom";
 
-// Enhanced style switching with your custom style as default
-export class CustomStyleManager {
-  private currentStyleId: string = 'custom';
-  
   getCurrentStyle() {
-    return CUSTOM_MAPBOX_CONFIG.availableStyles.find(
-      style => style.id === this.currentStyleId
-    ) || CUSTOM_MAPBOX_CONFIG.availableStyles[0];
+    return (
+      CUSTOM_MAPBOX_CONFIG.availableStyles.find(
+        (style) => style.id === this.currentStyleId,
+      ) ?? CUSTOM_MAPBOX_CONFIG.availableStyles[0]
+    );
   }
-  
+
+  /**
+   * Switch base map style (optional feature)
+   */
   switchStyle(styleId: string) {
-    const style = CUSTOM_MAPBOX_CONFIG.availableStyles.find(s => s.id === styleId);
+    const style = CUSTOM_MAPBOX_CONFIG.availableStyles.find(
+      (s) => s.id === styleId,
+    );
+
     if (style) {
       this.currentStyleId = styleId;
       return style.url;
     }
+
     return this.getCurrentStyle().url;
   }
-  
+
+  /**
+   * Get active style URL
+   * Used directly by <Mapbox.MapView />
+   */
+  getStyleUrl(styleId?: string) {
+    if (styleId) {
+      const style = CUSTOM_MAPBOX_CONFIG.availableStyles.find(
+        (s) => s.id === styleId,
+      );
+      return style?.url ?? CUSTOM_MAPBOX_CONFIG.styleUrl;
+    }
+
+    return this.getCurrentStyle().url;
+  }
+
   getAvailableStyles() {
     return CUSTOM_MAPBOX_CONFIG.availableStyles;
   }
-  
-  // Get style URL with fallback
-  getStyleUrl(styleId?: string) {
-    if (styleId) {
-      const style = CUSTOM_MAPBOX_CONFIG.availableStyles.find(s => s.id === styleId);
-      return style?.url || CUSTOM_MAPBOX_CONFIG.styleUrl;
-    }
-    return this.getCurrentStyle().url;
-  }
 }
 
-// Export singleton instance
+/**
+ * Singleton instance
+ */
 export const styleManager = new CustomStyleManager();

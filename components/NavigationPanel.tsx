@@ -262,7 +262,7 @@ const EnhancedNavigationPanel: React.FC<EnhancedNavigationPanelProps> = ({
         </View>
 
         {/* Route Info Cards */}
-        {travelTime && distance && (
+        {travelTime !== null && distance !== null && (
           <View style={styles.infoCards}>
             <View style={styles.infoCard}>
               <Ionicons name="time-outline" size={24} color="#1A73E8" />

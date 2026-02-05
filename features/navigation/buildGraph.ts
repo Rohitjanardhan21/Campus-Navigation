@@ -1,7 +1,7 @@
 import { distance, point } from "@turf/turf";
 import { FeatureCollection, LineString } from "geojson";
 
-const SNAP_THRESHOLD_METERS = 1;
+const CONNECT_THRESHOLD_METERS = 20;
 
 export type GraphNode = {
   id: string;
@@ -20,22 +20,19 @@ export type Graph = {
 export function buildGraph(paths: FeatureCollection<LineString>): Graph {
   const nodes: Record<string, GraphNode> = {};
   const edges: GraphEdge[] = [];
-
   let nodeCounter = 0;
+  const keyForCoord = (coord: [number, number]) =>
+    `${coord[0].toFixed(7)},${coord[1].toFixed(7)}`;
+  const idByKey = new Map<string, string>();
 
   function findOrCreateNode(coord: [number, number]): string {
-    for (const id in nodes) {
-      const d = distance(point(nodes[id].coord), point(coord), {
-        units: "meters",
-      });
-
-      if (d < SNAP_THRESHOLD_METERS) {
-        return id;
-      }
-    }
+    const key = keyForCoord(coord);
+    const existing = idByKey.get(key);
+    if (existing) return existing;
 
     const id = `${nodeCounter++}`;
     nodes[id] = { id, coord };
+    idByKey.set(key, id);
     return id;
   }
 
@@ -56,6 +53,22 @@ export function buildGraph(paths: FeatureCollection<LineString>): Graph {
 
       edges.push({ from: fromId, to: toId, weight: dist });
       edges.push({ from: toId, to: fromId, weight: dist });
+    }
+  }
+
+  const nodeIds = Object.keys(nodes);
+  for (let i = 0; i < nodeIds.length; i++) {
+    for (let j = i + 1; j < nodeIds.length; j++) {
+      const idA = nodeIds[i];
+      const idB = nodeIds[j];
+      const a = nodes[idA];
+      const b = nodes[idB];
+      if (!a || !b) continue;
+      const d = distance(point(a.coord), point(b.coord), { units: "meters" });
+      if (d <= CONNECT_THRESHOLD_METERS) {
+        edges.push({ from: idA, to: idB, weight: d });
+        edges.push({ from: idB, to: idA, weight: d });
+      }
     }
   }
 

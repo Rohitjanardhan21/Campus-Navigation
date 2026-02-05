@@ -38,6 +38,9 @@ export function dijkstra(
   }
 
   const path: string[] = [];
+  if (distances[endId] === Infinity) {
+    return path;
+  }
   let current: string | null = endId;
 
   while (current) {
