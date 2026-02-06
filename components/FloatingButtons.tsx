@@ -8,7 +8,6 @@ interface SmartFloatingButtonsProps {
   onZoomOut: () => void;
   onToggleMapStyle?: () => void;
   on3DView?: () => void;
-  onTraffic?: () => void;
   isNavigating?: boolean;
 }
 
@@ -18,7 +17,6 @@ const SmartFloatingButtons: React.FC<SmartFloatingButtonsProps> = ({
   onZoomOut,
   onToggleMapStyle,
   on3DView,
-  onTraffic,
   isNavigating = false,
 }) => {
   // const { theme } = useTheme();
@@ -128,7 +126,7 @@ const SmartFloatingButtons: React.FC<SmartFloatingButtonsProps> = ({
       </View>
 
       {/* Utility buttons */}
-      {(onToggleMapStyle || on3DView || onTraffic) && (
+      {(onToggleMapStyle || on3DView) && (
         <View style={styles.utilityButtons}>
           {onToggleMapStyle && (
             <FloatingButton
@@ -143,14 +141,6 @@ const SmartFloatingButtons: React.FC<SmartFloatingButtonsProps> = ({
               icon="cube"
               onPress={on3DView}
               delay={250}
-              size="small"
-            />
-          )}
-          {onTraffic && (
-            <FloatingButton
-              icon="car"
-              onPress={onTraffic}
-              delay={300}
               size="small"
             />
           )}

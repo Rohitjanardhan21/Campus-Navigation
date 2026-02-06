@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -46,7 +46,6 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
   const [voiceGuidance, setVoiceGuidance] = useState(true);
   const [autoReroute, setAutoReroute] = useState(true);
-  const [trafficAlerts, setTrafficAlerts] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [saveHistory, setSaveHistory] = useState(true);
   const [notifications, setNotifications] = useState(true);
@@ -83,13 +82,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               subtitle="Automatically find new routes"
               value={autoReroute}
               onValueChange={setAutoReroute}
-            />
-            <SettingItem
-              icon="car-outline"
-              title="Traffic Alerts"
-              subtitle="Real-time traffic notifications"
-              value={trafficAlerts}
-              onValueChange={setTrafficAlerts}
             />
 
             <SectionHeader title="APPEARANCE" />

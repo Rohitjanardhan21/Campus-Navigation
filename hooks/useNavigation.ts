@@ -1,18 +1,17 @@
-import {
-  calculateRouteProgress as calculateMapboxProgress,
-  getNextStep as getNextMapboxStep,
-  NavigationStep,
-} from "@/features/navigation/mapboxRouting";
 import { getCampusRoute } from "@/features/navigation/campusRouting";
-import { CampusPlace } from "@/src/domain/campus";
-import { Feature, LineString } from "geojson";
 import {
-  distance as turfDistance,
-  length as turfLength,
-  lineSlice,
-  nearestPointOnLine,
-  point,
+    calculateRouteProgress as calculateMapboxProgress,
+    NavigationStep
+} from "@/features/navigation/mapboxRouting";
+import { CampusPlace } from "@/src/domain/campus";
+import {
+    lineSlice,
+    nearestPointOnLine,
+    point,
+    distance as turfDistance,
+    length as turfLength,
 } from "@turf/turf";
+import { Feature, LineString } from "geojson";
 import { useCallback, useRef, useState } from "react";
 import { Alert, Animated, Easing } from "react-native";
 
@@ -318,20 +317,20 @@ export const useNavigation = () => {
     ): Promise<boolean> => {
       console.log("=== STARTING NAVIGATION ===");
 
-      if (!userLocation) {
-        Alert.alert("Error", "Current location not available");
-        return false;
-      }
-
-      const destCoords = getSafeCoordinates(destination as CampusPlace);
-      if (!destCoords) {
-        Alert.alert("Error", "Invalid destination coordinates");
-        return false;
-      }
-
-      setIsCalculatingRoute(true);
-
       try {
+        if (!userLocation) {
+          Alert.alert("Error", "Current location not available");
+          return false;
+        }
+
+        const destCoords = getSafeCoordinates(destination as CampusPlace);
+        if (!destCoords) {
+          Alert.alert("Error", "Invalid destination coordinates");
+          return false;
+        }
+
+        setIsCalculatingRoute(true);
+
         const route = await calculateRoute(
           userLocation,
           destCoords,
