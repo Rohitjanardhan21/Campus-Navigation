@@ -3,7 +3,7 @@ import { BUILDINGS } from "@/src/data/geo/buildings";
 import Mapbox from "@rnmapbox/maps";
 
 type Props = {
-  onBuildingPress?: (feature: any) => void;
+  onBuildingPress?: (feature: any, event: any) => void;
 };
 
 export function CampusBuildingsLayer({ onBuildingPress }: Props) {
@@ -14,7 +14,7 @@ export function CampusBuildingsLayer({ onBuildingPress }: Props) {
       onPress={(e) => {
         const feature = e.features?.[0];
         if (!feature) return;
-        onBuildingPress?.(feature);
+        onBuildingPress?.(feature, e);
       }}
     >
       <Mapbox.FillLayer

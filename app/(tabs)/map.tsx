@@ -2,9 +2,9 @@ import { useLocation } from "@/hooks/useLocation";
 import { useNavigation } from "@/hooks/useNavigation";
 import { useSearch } from "@/hooks/useSearch";
 import {
-  CUSTOM_MAPBOX_CONFIG,
-  CUSTOM_STYLE_CONFIG,
-  styleManager,
+    CUSTOM_MAPBOX_CONFIG,
+    CUSTOM_STYLE_CONFIG,
+    styleManager,
 } from "@/services/customMapboxStyle";
 import { CAMPUS_PLACES } from "@/src/data/campusPlaces";
 import { BUILDING_ENTRANCES } from "@/src/data/geo/buildingEntrances";
@@ -25,18 +25,19 @@ import SearchResults from "@/components/SearchResults";
 import SettingsModal from "@/components/SettingsModal";
 
 import Mapbox from "@rnmapbox/maps";
+import { lineSlice, nearestPointOnLine, point } from "@turf/turf";
+import * as Clipboard from 'expo-clipboard';
 import { Feature, FeatureCollection, Point } from "geojson";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  Share,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Keyboard,
+    Share,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
-import { lineSlice, nearestPointOnLine, point } from "@turf/turf";
 
 const DEFAULT_CAMERA_SETTINGS = {
   zoomLevel: 16,
@@ -257,6 +258,36 @@ export default function MapScreen() {
       Keyboard.dismiss();
     }
 
+    // Show coordinates when map is tapped
+    if (event?.geometry?.coordinates) {
+      const coords = event.geometry.coordinates;
+      Alert.alert(
+        "Coordinates",
+        `Longitude: ${coords[0].toFixed(6)}\nLatitude: ${coords[1].toFixed(6)}`,
+        [
+          {
+            text: "Copy",
+            onPress: async () => {
+              const coordText = `[${coords[0]}, ${coords[1]}]`;
+              await Clipboard.setStringAsync(coordText);
+              console.log(`Coordinates: ${coordText}`);
+              Alert.alert("Copied!", "Coordinates copied to clipboard");
+            }
+          },
+          {
+            text: "Navigate Here",
+            onPress: () => {
+              if (handleImmediateMapNavigation) {
+                handleImmediateMapNavigation(event, userLocation);
+              }
+            }
+          },
+          { text: "Cancel", style: "cancel" }
+        ]
+      );
+      return;
+    }
+
     if (handleImmediateMapNavigation) {
       handleImmediateMapNavigation(event, userLocation);
     }
@@ -351,33 +382,69 @@ export default function MapScreen() {
     });
   };
 
-  const handleBuildingPress = (feature: any) => {
+  const handleBuildingPress = (feature: any, event: any) => {
     const placeId = feature?.properties?.placeId;
+    let place: (typeof CAMPUS_PLACES)[0] | undefined;
+    
     if (placeId) {
-      const place = CAMPUS_PLACES.find((p) => p.id === placeId);
-      if (place) {
-        handlePlacePress(place);
-        return;
+      place = CAMPUS_PLACES.find((p) => p.id === placeId);
+    }
+
+    if (!place) {
+      const geometry = feature?.geometry;
+      if (geometry && geometry.type === "Polygon") {
+        const coord = geometry.coordinates?.[0]?.[0] as [number, number];
+        if (coord) {
+          place = CAMPUS_PLACES.find((p) => {
+            const dist = Math.sqrt(
+              Math.pow(p.coordinate[0] - coord[0], 2) +
+                Math.pow(p.coordinate[1] - coord[1], 2),
+            );
+            return dist < 0.001;
+          });
+        }
       }
     }
 
-    const geometry = feature?.geometry;
-    if (!geometry || geometry.type !== "Polygon") return;
-
-    const coord = geometry.coordinates?.[0]?.[0] as [number, number];
-    if (!coord) return;
-
-    const nearestPlace = CAMPUS_PLACES.find((place) => {
-      const dist = Math.sqrt(
-        Math.pow(place.coordinate[0] - coord[0], 2) +
-          Math.pow(place.coordinate[1] - coord[1], 2),
-      );
-      return dist < 0.001;
-    });
-
-    if (nearestPlace) {
-      handlePlacePress(nearestPlace);
+    if (!place) {
+      return;
     }
+
+    // Get the actual tap coordinates from event.coordinates
+    const tapCoords = event?.coordinates 
+      ? [event.coordinates.longitude, event.coordinates.latitude] as [number, number]
+      : place.coordinate;
+    
+    Alert.alert(
+      place.name,
+      `Longitude: ${tapCoords[0].toFixed(6)}\nLatitude: ${tapCoords[1].toFixed(6)}`,
+      [
+        {
+          text: "Copy",
+          onPress: async () => {
+            const coordText = `[${tapCoords[0]}, ${tapCoords[1]}]`;
+            await Clipboard.setStringAsync(coordText);
+            console.log(`Coordinates: ${coordText}`);
+            Alert.alert("Copied!", "Coordinates copied to clipboard");
+          }
+        },
+        {
+          text: "View Details",
+          onPress: () => handlePlacePress(place!)
+        },
+        {
+          text: "Navigate Here",
+          onPress: async () => {
+            if (!userLocation) {
+              Alert.alert("Location Required", "Please wait for your location to be detected");
+              return;
+            }
+            await startNavigation(userLocation, place!);
+          }
+        },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
   };
 
   const zoomIn = () => {
@@ -648,7 +715,6 @@ export default function MapScreen() {
         onZoomOut={zoomOut}
         onToggleMapStyle={toggleMapStyle}
         on3DView={() => Alert.alert("3D View", "3D view activated")}
-        onTraffic={() => Alert.alert("Traffic", "Traffic layer toggled")}
         isNavigating={isNavigating}
       />
 
