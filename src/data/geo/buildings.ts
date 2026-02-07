@@ -99,26 +99,6 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
     {
       type: "Feature",
       properties: {
-        Block: "Workshop",
-        id: "workshop",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.438285, 12.862217],
-            [77.438385, 12.862217],
-            [77.438385, 12.862117],
-            [77.438285, 12.862117],
-            [77.438285, 12.862217],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "workshop",
-    },
-    {
-      type: "Feature",
-      properties: {
         Block: "Fourth Block",
         id: "fourth-block",
         placeId: "fourth-block",
@@ -140,8 +120,9 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
     {
       type: "Feature",
       properties: {
-        Block: "Chapel",
+        Block: "St. Kuriakose Chavara Chapel",
         id: "chapel",
+        placeId: "chapel",
       },
       geometry: {
         coordinates: [
@@ -205,107 +186,6 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
     {
       type: "Feature",
       properties: {
-        Block: "Devadan Hall - A Block",
-        id: "devadan-hall-a",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.439000, 12.859850],
-            [77.439100, 12.859850],
-            [77.439100, 12.859750],
-            [77.439000, 12.859750],
-            [77.439000, 12.859850],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "devadan-hall-a",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Devadan Hall - B Block",
-        id: "devadan-hall-b",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.439200, 12.859850],
-            [77.439300, 12.859850],
-            [77.439300, 12.859750],
-            [77.439200, 12.859750],
-            [77.439200, 12.859850],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "devadan-hall-b",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Devadan Hall - C Block",
-        id: "devadan-hall-c",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.439400, 12.859850],
-            [77.439500, 12.859850],
-            [77.439500, 12.859750],
-            [77.439400, 12.859750],
-            [77.439400, 12.859850],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "devadan-hall-c",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Devadan Hall - D Block",
-        id: "devadan-hall-d",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.439600, 12.859850],
-            [77.439700, 12.859850],
-            [77.439700, 12.859750],
-            [77.439600, 12.859750],
-            [77.439600, 12.859850],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "devadan-hall-d",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Warden's Office",
-        id: "wardens-office",
-        placeId: "wardens-office",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.43888451732923, 12.860344667282943],
-            [77.43908451732923, 12.860344667282943],
-            [77.43908451732923, 12.860244667282943],
-            [77.43888451732923, 12.860244667282943],
-            [77.43888451732923, 12.860344667282943],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "wardens-office",
-    },
-    {
-      type: "Feature",
-      properties: {
         Block: "Chota Dhobi Laundry Service",
         id: "chota-dhobi-laundry",
         placeId: "chota-dhobi-laundry",
@@ -356,12 +236,11 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
       geometry: {
         coordinates: [
           [
-            [77.438256, 12.861791],
-            [77.438565, 12.861684],
-            [77.438775, 12.862136],
-            [77.438462, 12.862248],
-            [77.438316, 12.861935],
-            [77.438256, 12.861791],
+            [77.43826719522485, 12.861805290363307],
+            [77.43855368142403, 12.861702492214377],
+            [77.43874604316608, 12.862120479308757],
+            [77.43846569523521, 12.862234163495302],
+            [77.43826719522485, 12.861805290363307],
           ],
         ],
         type: "Polygon",
@@ -399,111 +278,6 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
       id: "first-block",
     },
     // Sports Facilities
-    {
-      type: "Feature",
-      properties: {
-        Block: "Basketball Court",
-        id: "basketball-court",
-        placeId: "basketball-court",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.437076, 12.862064],
-            [77.437176, 12.862064],
-            [77.437176, 12.861964],
-            [77.437076, 12.861964],
-            [77.437076, 12.862064],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "basketball-court",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Basketball Court 2",
-        id: "basketball-court-2",
-        placeId: "basketball-court-2",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.436982, 12.861673],
-            [77.437082, 12.861673],
-            [77.437082, 12.861573],
-            [77.436982, 12.861573],
-            [77.436982, 12.861673],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "basketball-court-2",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Tennis Court",
-        id: "tennis-court",
-        placeId: "tennis-court",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.436845, 12.861273],
-            [77.436945, 12.861273],
-            [77.436945, 12.861173],
-            [77.436845, 12.861173],
-            [77.436845, 12.861273],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "tennis-court",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Mini Football Ground",
-        id: "mini-football-ground",
-        placeId: "mini-football-ground",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.436742, 12.860989],
-            [77.436842, 12.860989],
-            [77.436842, 12.860889],
-            [77.436742, 12.860889],
-            [77.436742, 12.860989],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "mini-football-ground",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Main Ground",
-        id: "main-ground",
-        placeId: "main-ground",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.436400, 12.861600],
-            [77.436600, 12.861600],
-            [77.436600, 12.861400],
-            [77.436400, 12.861400],
-            [77.436400, 12.861600],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "main-ground",
-    },
     {
       type: "Feature",
       properties: {
@@ -549,18 +323,18 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
     {
       type: "Feature",
       properties: {
-        Block: "Guest House",
+        Block: "South Canteen",
         id: "juice-world",
         placeId: "juice-world",
       },
       geometry: {
         coordinates: [
           [
-            [77.43943292944476, 12.862434639649209],
-            [77.43932256871824, 12.862182633863782],
-            [77.43922042525077, 12.862253405635485],
-            [77.43931643895354, 12.862465574910871],
-            [77.43943292944476, 12.862434639649209],
+            [77.43930848163279, 12.86248722006016],
+            [77.43919354079605, 12.862230216527792],
+            [77.43932176744823, 12.862172431736965],
+            [77.43943825694282, 12.862438883716834],
+            [77.43930848163279, 12.86248722006016],
           ],
         ],
         type: "Polygon",
@@ -570,103 +344,23 @@ export const BUILDINGS: FeatureCollection<Polygon> = {
     {
       type: "Feature",
       properties: {
-        Block: "Juice World",
+        Block: "Private Guest House",
         id: "juice-world-new",
+        placeId: "juice-world-new",
       },
       geometry: {
         coordinates: [
           [
-            [77.439458, 12.862299],
-            [77.439558, 12.862299],
-            [77.439558, 12.862199],
-            [77.439458, 12.862199],
-            [77.439458, 12.862299],
+            [77.43934842824245, 12.862196166930431],
+            [77.43951294205038, 12.86212495737881],
+            [77.43967181453809, 12.862472614476204],
+            [77.43950425330979, 12.862536345478645],
+            [77.43934842824245, 12.862196166930431],
           ],
         ],
         type: "Polygon",
       },
       id: "juice-world-new",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Cafe Coffee Day",
-        id: "cafe-coffee-day",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.439379, 12.862021],
-            [77.439479, 12.862021],
-            [77.439479, 12.861921],
-            [77.439379, 12.861921],
-            [77.439379, 12.862021],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "cafe-coffee-day",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "North Canteen",
-        id: "north-canteen",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.438876, 12.859643],
-            [77.438976, 12.859643],
-            [77.438976, 12.859543],
-            [77.438876, 12.859543],
-            [77.438876, 12.859643],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "north-canteen",
-    },
-    // Event Spaces
-    {
-      type: "Feature",
-      properties: {
-        Block: "Open Auditorium",
-        id: "open-auditorium",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.438526, 12.862815],
-            [77.438626, 12.862815],
-            [77.438626, 12.862715],
-            [77.438526, 12.862715],
-            [77.438526, 12.862815],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "open-auditorium",
-    },
-    {
-      type: "Feature",
-      properties: {
-        Block: "Students Square",
-        id: "students-square",
-      },
-      geometry: {
-        coordinates: [
-          [
-            [77.438124, 12.862302],
-            [77.438224, 12.862302],
-            [77.438224, 12.862202],
-            [77.438124, 12.862202],
-            [77.438124, 12.862302],
-          ],
-        ],
-        type: "Polygon",
-      },
-      id: "students-square",
     },
   ],
 };

@@ -1,3 +1,5 @@
+import { useNavigationHistory } from "@/contexts/NavigationHistoryContext";
+import { useSettings } from "@/contexts/SettingsContext";
 import { getCampusRoute } from "@/features/navigation/campusRouting";
 import {
     calculateRouteProgress as calculateMapboxProgress,
@@ -32,6 +34,24 @@ export interface RouteProgress {
 }
 
 export const useNavigation = () => {
+  // Use optional chaining and provide defaults in case contexts aren't available
+  let settings = { autoReroute: true, saveHistory: true };
+  let addToHistory = async () => {};
+  
+  try {
+    const settingsContext = useSettings();
+    settings = settingsContext.settings;
+  } catch (e) {
+    console.warn('Settings context not available');
+  }
+  
+  try {
+    const historyContext = useNavigationHistory();
+    addToHistory = historyContext.addToHistory;
+  } catch (e) {
+    console.warn('Navigation history context not available');
+  }
+  
   const [selectedDestination, setSelectedDestination] =
     useState<CampusPlace | null>(null);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
@@ -60,6 +80,7 @@ export const useNavigation = () => {
   const lastUserLocationRef = useRef<[number, number] | null>(null);
   const lastStepDistanceRef = useRef<number | null>(null);
   const lastRemainingDistanceRef = useRef<number | null>(null);
+  const lastRerouteTimeRef = useRef<number>(0);
   const lastRerouteLocationRef = useRef<[number, number] | null>(null);
 
   // Update location tracking for turn-by-turn navigation
@@ -121,6 +142,26 @@ export const useNavigation = () => {
       totalDistanceRemaining: remainingDistanceMeters,
       estimatedTimeRemaining: Math.round(remainingDistanceMeters / 1.4),
     });
+
+    // Auto-reroute if enabled and user is off route
+    if (settings.autoReroute && isOffRoute && selectedDestination) {
+      const timeSinceLastReroute = Date.now() - (lastRerouteTimeRef.current || 0);
+      // Only reroute once every 10 seconds to avoid excessive recalculations
+      if (timeSinceLastReroute > 10000) {
+        console.log("User is off route, recalculating...");
+        lastRerouteTimeRef.current = Date.now();
+        // Recalculate route from current location
+        calculateRoute(userLocation, selectedDestination.coordinate, selectedDestination).then((newRoute) => {
+          if (newRoute) {
+            setRouteInfo(newRoute);
+            setNavigationSteps(newRoute.steps || []);
+            setCurrentStepIndex(0);
+            setTravelTime(newRoute.duration);
+            setDistance(newRoute.distance);
+          }
+        });
+      }
+    }
 
     // Check if we need to advance to next step
     const currentStep = navigationSteps[currentStepIndex];
@@ -362,6 +403,16 @@ export const useNavigation = () => {
           }).start();
 
           setIsNavigating(true);
+          
+          // Save to history if enabled
+          if (settings.saveHistory) {
+            addToHistory({
+              destination: destination as CampusPlace,
+              duration: route.duration,
+              distance: route.distance,
+            });
+          }
+          
           return true;
         } else {
           throw new Error("No route found");

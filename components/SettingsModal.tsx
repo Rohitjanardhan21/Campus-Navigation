@@ -1,6 +1,8 @@
+import { useNavigationHistory } from '@/contexts/NavigationHistoryContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -44,11 +46,31 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 );
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
-  const [voiceGuidance, setVoiceGuidance] = useState(true);
-  const [autoReroute, setAutoReroute] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [saveHistory, setSaveHistory] = useState(true);
-  const [notifications, setNotifications] = useState(true);
+  // Provide defaults in case contexts aren't available
+  let settings = { 
+    voiceGuidance: true, 
+    autoReroute: true, 
+    darkMode: false, 
+    saveHistory: true, 
+    notifications: true 
+  };
+  let updateSetting = async () => {};
+  let clearHistory = async () => {};
+  
+  try {
+    const settingsContext = useSettings();
+    settings = settingsContext.settings;
+    updateSetting = settingsContext.updateSetting;
+  } catch (e) {
+    console.warn('Settings context not available in modal');
+  }
+  
+  try {
+    const historyContext = useNavigationHistory();
+    clearHistory = historyContext.clearHistory;
+  } catch (e) {
+    console.warn('Navigation history context not available in modal');
+  }
 
   return (
     <Modal
@@ -73,15 +95,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               icon="volume-high-outline"
               title="Voice Guidance"
               subtitle="Turn-by-turn voice instructions"
-              value={voiceGuidance}
-              onValueChange={setVoiceGuidance}
+              value={settings.voiceGuidance}
+              onValueChange={(value) => updateSetting('voiceGuidance', value)}
             />
             <SettingItem
               icon="git-branch-outline"
               title="Auto Reroute"
               subtitle="Automatically find new routes"
-              value={autoReroute}
-              onValueChange={setAutoReroute}
+              value={settings.autoReroute}
+              onValueChange={(value) => updateSetting('autoReroute', value)}
             />
 
             <SectionHeader title="APPEARANCE" />
@@ -89,8 +111,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               icon="moon-outline"
               title="Dark Mode"
               subtitle="Use dark theme"
-              value={darkMode}
-              onValueChange={setDarkMode}
+              value={settings.darkMode}
+              onValueChange={(value) => updateSetting('darkMode', value)}
             />
 
             <SectionHeader title="PRIVACY" />
@@ -98,16 +120,46 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose }) => {
               icon="time-outline"
               title="Save History"
               subtitle="Keep navigation history"
-              value={saveHistory}
-              onValueChange={setSaveHistory}
+              value={settings.saveHistory}
+              onValueChange={(value) => updateSetting('saveHistory', value)}
             />
             <SettingItem
               icon="notifications-outline"
               title="Notifications"
               subtitle="Allow push notifications"
-              value={notifications}
-              onValueChange={setNotifications}
+              value={settings.notifications}
+              onValueChange={(value) => updateSetting('notifications', value)}
             />
+            
+            <TouchableOpacity 
+              style={styles.settingItem}
+              onPress={() => {
+                Alert.alert(
+                  'Clear History',
+                  'Are you sure you want to clear all navigation history?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                      text: 'Clear', 
+                      style: 'destructive',
+                      onPress: () => {
+                        clearHistory();
+                        Alert.alert('Success', 'Navigation history cleared');
+                      }
+                    },
+                  ]
+                );
+              }}
+            >
+              <View style={styles.settingLeft}>
+                <Ionicons name="trash-outline" size={24} color="#EA4335" style={styles.settingIcon} />
+                <View style={styles.settingTextContainer}>
+                  <Text style={[styles.settingTitle, { color: '#EA4335' }]}>Clear History</Text>
+                  <Text style={styles.settingSubtitle}>Delete all navigation history</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9AA0A6" />
+            </TouchableOpacity>
 
             <SectionHeader title="GENERAL" />
             <TouchableOpacity style={styles.settingItem}>

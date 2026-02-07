@@ -111,18 +111,7 @@ export const CAMPUS_PATHS: FeatureCollection<LineString> = {
       },
       id: "38f00346209db83967390ea77afd60a0",
     },
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        coordinates: [
-          [77.438784, 12.861944],
-          [77.438665, 12.861923],
-        ],
-        type: "LineString",
-      },
-      id: "39fe0e2a7e2181d7a458091d790c03b0",
-    },
+
     {
       type: "Feature",
       properties: {},
@@ -169,34 +158,6 @@ export const CAMPUS_PATHS: FeatureCollection<LineString> = {
         type: "LineString",
       },
       id: "5da19aedabac6605afd013745fda66aa",
-    },
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        coordinates: [
-          [77.439205, 12.862074],
-          [77.439259, 12.8622],
-        ],
-        type: "LineString",
-      },
-      id: "601508956cfbfb4977c0400f9ad6be2a",
-    },
-    {
-      type: "Feature",
-      properties: {
-        name: "sub road",
-      },
-      geometry: {
-        coordinates: [
-          [77.438875, 12.862154],
-          [77.438691, 12.861728],
-          [77.438408, 12.861544],
-          [77.43808, 12.861466],
-        ],
-        type: "LineString",
-      },
-      id: "63f0f691d999f691c88e8b8e4b4f0f8a",
     },
     {
       type: "Feature",
@@ -471,106 +432,59 @@ export const CAMPUS_PATHS: FeatureCollection<LineString> = {
     {
       type: "Feature",
       properties: {
-        name: "Path to KN's Restaurant",
+        name: "Devadan Hall Center Path",
       },
       geometry: {
         coordinates: [
-          [77.437387, 12.862901],
-          [77.436815, 12.862607],
+          [77.43947505694081, 12.860374617059094],
+          [77.43944745852741, 12.860268020832237],
+          [77.43924060697367, 12.859494643513486],
         ],
         type: "LineString",
       },
-      id: "path-kns-restaurant",
+      id: "path-devadan-center",
     },
     {
       type: "Feature",
       properties: {
-        name: "Path to Sports Facilities",
+        name: "Third Block Connection",
       },
       geometry: {
         coordinates: [
-          [77.436815, 12.862607],
-          [77.437126, 12.862014],
-          [77.437032, 12.861623],
-          [77.436895, 12.861223],
-          [77.436792, 12.860939],
+          [77.43893098603957, 12.862145612489385],
+          [77.43899536005324, 12.862246735875672],
         ],
         type: "LineString",
       },
-      id: "path-sports-facilities",
+      id: "path-thirdblock-connection",
     },
     {
       type: "Feature",
       properties: {
-        name: "Path to Open Auditorium",
+        name: "Path to Fifth Block Area",
       },
       geometry: {
         coordinates: [
-          [77.438532, 12.8632],
-          [77.438576, 12.862765],
+          [77.43878297829372, 12.861945617374104],
+          [77.43866395994081, 12.861925701511879],
         ],
         type: "LineString",
       },
-      id: "path-open-auditorium",
+      id: "path-fifth-block-area",
     },
     {
       type: "Feature",
       properties: {
-        name: "Path to Juice World and Cafe Coffee Day",
+        name: "Fifth Block Connector",
       },
       geometry: {
         coordinates: [
-          [77.439332, 12.062079],
-          [77.439331, 12.862360],
-          [77.439429, 12.861971],
+          [77.438875, 12.862154],
+          [77.43878297829372, 12.861945617374104],
         ],
         type: "LineString",
       },
-      id: "path-juice-cafe",
-    },
-    {
-      type: "Feature",
-      properties: {
-        name: "Path to Devadan Football Ground",
-      },
-      geometry: {
-        coordinates: [
-          [77.439821, 12.860334],
-          [77.440500, 12.859500],
-          [77.441413, 12.858369],
-        ],
-        type: "LineString",
-      },
-      id: "path-devadan-football",
-    },
-    {
-      type: "Feature",
-      properties: {
-        name: "Path to Warden's Office",
-      },
-      geometry: {
-        coordinates: [
-          [77.439397, 12.860461],
-          [77.43898451732923, 12.860294667282943],
-        ],
-        type: "LineString",
-      },
-      id: "path-wardens-office",
-    },
-    {
-      type: "Feature",
-      properties: {
-        name: "Path to Chota Dhobi Laundry",
-      },
-      geometry: {
-        coordinates: [
-          [77.439821, 12.860334],
-          [77.440029, 12.861423],
-          [77.44008808158497, 12.860656965033584],
-        ],
-        type: "LineString",
-      },
-      id: "path-chota-dhobi",
+      id: "path-fifth-block-connector",
     },
   ],
 };

@@ -256,6 +256,7 @@ export default function MapScreen() {
     if (isSearchFocused || (searchResults && searchResults.length > 0)) {
       clearSearch();
       Keyboard.dismiss();
+      return;
     }
 
     // Show coordinates when map is tapped
@@ -526,6 +527,60 @@ export default function MapScreen() {
         {BUILDING_ENTRANCES.length > 0 && (
           <Mapbox.ShapeSource
             id="building-entrances"
+            onPress={(event) => {
+              // Handle entrance press
+              const feature = event.features?.[0];
+              if (feature?.properties) {
+                const entranceId = feature.properties.id;
+                const entrance = BUILDING_ENTRANCES.find(e => e.id === entranceId);
+                
+                if (entrance) {
+                  const building = CAMPUS_PLACES.find(p => p.id === entrance.buildingId);
+                  const tapCoords = event.coordinates 
+                    ? [event.coordinates.longitude, event.coordinates.latitude] as [number, number]
+                    : entrance.coordinate;
+                  
+                  Alert.alert(
+                    `${building?.name || 'Building'} - ${entrance.name}`,
+                    `Entrance\nLongitude: ${tapCoords[0].toFixed(6)}\nLatitude: ${tapCoords[1].toFixed(6)}`,
+                    [
+                      {
+                        text: "Copy",
+                        onPress: async () => {
+                          const coordText = `[${tapCoords[0]}, ${tapCoords[1]}]`;
+                          await Clipboard.setStringAsync(coordText);
+                          console.log(`Coordinates: ${coordText}`);
+                          Alert.alert("Copied!", "Coordinates copied to clipboard");
+                        }
+                      },
+                      {
+                        text: "View Building",
+                        onPress: () => {
+                          if (building) {
+                            handlePlacePress(building);
+                          }
+                        }
+                      },
+                      {
+                        text: "Navigate Here",
+                        onPress: async () => {
+                          if (!userLocation) {
+                            Alert.alert("Location Required", "Please wait for your location to be detected");
+                            return;
+                          }
+                          await startNavigation(userLocation, {
+                            id: entrance.id,
+                            name: `${building?.name || 'Building'} - ${entrance.name}`,
+                            coordinate: entrance.coordinate,
+                          });
+                        }
+                      },
+                      { text: "Cancel", style: "cancel" }
+                    ]
+                  );
+                }
+              }
+            }}
             shape={{
               type: "FeatureCollection",
               features: BUILDING_ENTRANCES.map((entrance) => ({

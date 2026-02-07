@@ -1,4 +1,6 @@
 // app/_layout.tsx
+import { NavigationHistoryProvider } from "@/contexts/NavigationHistoryContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import { MAPBOX_TOKEN } from "@/services/config";
 import Mapbox from "@rnmapbox/maps";
 import { Stack } from "expo-router";
@@ -11,10 +13,14 @@ try {
 
 export default function RootLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    />
+    <SettingsProvider>
+      <NavigationHistoryProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        />
+      </NavigationHistoryProvider>
+    </SettingsProvider>
   );
 }
